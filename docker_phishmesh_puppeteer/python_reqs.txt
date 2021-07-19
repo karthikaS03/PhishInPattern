@@ -1,0 +1,11 @@
+pytesseract
+autocorrect
+pyppeteer
+sqlalchemy
+mysqlclient
+textblob
+scikit-learn==0.21.3
+faker
+pandas
+pyenchant
+tldextract

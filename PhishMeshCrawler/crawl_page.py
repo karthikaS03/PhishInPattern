@@ -166,17 +166,29 @@ def parse_elements(res,path,page):
 		print('Parse_Elements :: Exception !! ',pre)	
 	return page
 
+def get_frame(frameIndex, pup_page):
+	if frameIndex == -1:
+		frame = pup_page
+	else:
+		frame = pup_page.frames[frameIndex+1]
+	return frame
 
-async def reset_element(element, page):
+async def reset_element(element, page, field_selector):
 	try:
+		# await get_frame(element.element_frame_index, page).click()
 		if  await element.getProperty("type") not in ["hidden","button","reset","a","checkbox","submit","radio"] and await element.isIntersectingViewport(): 
 			print('Resetting Element!!')	
-			await element.focus()			
-			await page.keyboard.down('Control');
-			await page.keyboard.press('A');
-			await page.keyboard.up('Control');
-			await page.keyboard.press('Backspace');
-			await page.keyboard.press('Enter')
+			await element.focus()
+			# await  get_frame(element.element_frame_index, page).focus(field_selector)			
+			cnt = 0
+			while cnt <= 50:
+				await element.press('Backspace')
+				cnt = cnt+1
+			# await page.keyboard.down('Control');
+			# await page.keyboard.press('A');
+			# await page.keyboard.up('Control');
+			# await page.keyboard.press('Backspace');
+			# await page.keyboard.press('Enter')
 	except Exception as e:
 		print('Reset Element!!', e)
 		logger.info('reset_element(): Exception!!') 
@@ -386,16 +398,10 @@ async def crawl_web_page(phish_url, phish_id=-1):
 		# phish_db_layer.add_page_rsp_info(rsp_info)
 		page_responses.append(rsp_info)
 
-	def get_frame(frameIndex):
-		if frameIndex == -1:
-			frame = pup_page
-		else:
-			frame = pup_page.frames[frameIndex+1]
-		return frame
 
 	async def get_field(field_selector, frameIndex):
 		try:
-			frame = get_frame(frameIndex)
+			frame = get_frame(frameIndex, pup_page)
 			await frame.waitFor(field_selector)
 			field = await frame.J(field_selector);
 			form = await frame.Jeval(field_selector, "(el)=>{ return el.form.name }");
@@ -430,13 +436,13 @@ async def crawl_web_page(phish_url, phish_id=-1):
 
 				### Type the value in the field 
 				if field !=None: 
-					await reset_element(field, pup_page)							
+					await reset_element(field, pup_page, field_selector)							
 					print('typing value ::', element.element_value)
 					# print(field)
 					await field.focus()
 					await field.type(element.element_value)
 					time.sleep(3)
-					# await get_frame(element.element_frame_index).Jeval(field_selector, "(el)=>{ el.blur(); }");
+					await get_frame(element.element_frame_index, pup_page).Jeval(field_selector, "(el)=>{ el.blur(); }");
 					time.sleep(3)
 
 			except Exception as ve:

@@ -17,7 +17,7 @@ import tldextract
 import argparse
 
 dir_path = os.path.abspath(os.path.dirname(__file__))
-dir_path = dir_path +'/../data/'
+dir_path = dir_path +'/../data'
 
 logger = Phish_Logger.get_phish_logger('page_crawler.py')
 
@@ -59,113 +59,118 @@ def filterData(text):
 	return text
 
 def parse_elements(res,path,page):
-	fields=[];
-	elementCount=0
-	#Enumerate all the elements in the page
-	for index,r in enumerate(res):
-		#Filter Input and Select tags which are not hidden
-		#print r["tag"] +" " + str(r["type"]) +" "+" " + str(r["innerText"]) +" " +r["tag"]
-		
-		if any(tag in r["tag"] for tag in ['INPUT']) and 'type' in r and r["type"] not in ['hidden','button','submit','reset','radio','checkbox'] and r["visibility"]!='hidden':
+	try:
+		fields=[];
+		elementCount=0
+		#Enumerate all the elements in the page
+		for index,r in enumerate(res):
+			#Filter Input and Select tags which are not hidden
+			# print(r["tag"])
 			# print('******************************Processing Element ::***********************************************')
 			# print(r)
-			flag=False;
-			elementCount=elementCount+1;
-			elementId   = r["id"] if r["id"]!=None else "Unknown"+str(index)
-			elementName = r["name"] if r["name"]!=None else "Unknown"+str(index)
-			element = page_element.Page_Element(elementName,r["tag"],elementId)
-			element.form =r["form"]
-			element.position = ";".join(map(str,[r["left"],r["top"],r["right"],r["bottom"]]))
-			element.parsed_texts.append(elementName)
-			element.parsed_methods.append("Element Name")
-			element = add_InnerText(element)  
-			flag=True if len(element.categories[-1])>1 else False
-			element.parsed_texts.append(elementId)
-			element.parsed_methods.append("Element Id")
-			element = add_InnerText(element)
-			flag=True if len(element.categories[-1])>1 else False                
 
-			#print "Element" + r["name"]
-			for ind,itm in enumerate(reversed(res[:index])):
-				if abs(itm["left"]-r["left"])<15 and abs(itm["top"]-r["top"])<5 and any(tag in itm["tag"] for tag in textTags):
-					if itm["innerText"] !=None:	  
-						text = filterData(itm["innerText"])
-						#print "Left" + itm["innerText"]
-						if len(text)>1 and len(text)<35 :							
-							element.parsed_texts.append(text)
-							element.parsed_methods.append("LeftSide_InnerText")
-							element = add_InnerText(element)                
-							flag=True if len(element.categories[-1])>1 else False
-							break;          
-				elif abs(itm["top"] - r["top"])<15 and abs(itm["left"]-r["left"])<5 and any(tag in itm["tag"] for tag in textTags):
-					if itm["innerText"] !=None:	  		
-						text = filterData(itm["innerText"])				
-						#print "top" +itm["innerText"]
-						if len(text)>1 and len(text)<35 :							
-							element.parsed_texts.append(text)
-							element.parsed_methods.append("TopSide_InnerText")
-							element = add_InnerText(element)           
-							flag=True if len(element.categories[-1])>1 else False
-							break;
-			if flag==False:           
-				text=screenshot_slicing.img_to_text(path,'I',r["left"]-5,r["top"]-5,r["right"]+5,r["bottom"]+5,3) 
-				#print('Screenshot inner text: ',text)
-				text = filterData(text)
-				if len(text)>1 :    					
-					element.parsed_texts.append(text)
-					element.parsed_methods.append("Image_OCR_Read_Inside")
-					element = add_InnerText(element)  					    
-					flag=True if len(element.categories[-1])>1 else False       
-          
-			if flag==False:           
-				text=screenshot_slicing.img_to_text(path,'L',r["left"]-200,r["top"],r["left"],r["bottom"],3)
-				#print(text)  
-				text = filterData(text)  
-				if len(text)>1 :      					
-					element.parsed_texts.append(text)
-					element.parsed_methods.append("Image_OCR_Read_Left")
-					element = add_InnerText(element)                    	
-					flag=True if len(element.categories[-1])>1 else False  
-				else:          
-					text=screenshot_slicing.img_to_text(path,'T',r["left"],r["top"]-(r["height"]+5),r["right"],r["bottom"]-(r["bottom"]-r["top"]),3)  
-					#print('Screenshot result:',text)
-					text = filterData(text)    
-					if len(text)>1 :						
-						element.parsed_texts.append(text)
-						element.parsed_methods.append("Image_OCR_Read_Top")
-						element = add_InnerText(element)                
-						flag=True if len(element.categories[-1])>1 else False        
-			if r["placeholder"]!='null' and flag!=True:      
-				flag=True;
-				element.parsed_texts.append(r["placeholder"])
-				element.parsed_methods.append("placeholder")
-				element = add_InnerText(element)
-			category, value, parsed_text, parsed_method = element.get_category_value()
-			logger.info('parse_elements(%s) Element ->  Name: %s ;  Html_Id: %s ; Category: %s ; Value: %s; Parsed_text: %s; Parsed_method:%s' % ( page.page_image_id,element.name, element.html_id,category,value,parsed_text,parsed_method))
-			category_id = phish_db_layer.find_category_id(category)
-			element_db = phish_db_schema.Elements(element_name = element.name, 
-												  element_tag = element.tag, 
-												  element_html_id = element.html_id, 
-												  element_position =element.position, 
-												  element_form = element.form, 
-												  element_value = value,
-												  field_category_id = category_id,
-												  element_parsed_text = parsed_text, 
-												  element_parsed_method = parsed_method)
-			page.elements.append(element_db)
-			# phish_db_layer.add_element_info(element_db)
-			print('parse_elements(%s) Element ->  Name: %s ;  Html_Id: %s ; Category: %s ; Value: %s; Parsed_text: %s; Parsed_method:%s' % ( page.page_image_id,element.name, element.html_id,category,value,parsed_text,parsed_method))
+			# print (r["tag"] +" " + str(r["type"]) +" "+" " + str(r["innerText"]) +" " +r["tag"])
 			
+			if any(tag in r["tag"] for tag in ['INPUT']) and 'type' in r and r["type"] not in ['hidden','button','submit','reset','radio','checkbox'] and r["visibility"]!='hidden':
+				# print('******************************Processing Element ::***********************************************')
+				# print(r)
+				flag=False;
+				elementCount=elementCount+1;
+				elementId   = r["id"] if r["id"]!=None else "Unknown"+str(index)
+				elementName = r["name"] if r["name"]!=None else "Unknown"+str(index)
+				element = page_element.Page_Element(elementName,r["tag"],elementId)
+				element.form = r["form"]
+				element.frameIndex = r['frameIndex']
+				element.position = ";".join(map(str,[r["left"],r["top"],r["right"],r["bottom"]]))
+				element.parsed_texts.append(elementName)
+				element.parsed_methods.append("Element Name")
+				element = add_InnerText(element)  
+				flag=True if len(element.categories[-1])>1 else False
+				element.parsed_texts.append(elementId)
+				element.parsed_methods.append("Element Id")
+				element = add_InnerText(element)
+				flag=True if len(element.categories[-1])>1 else False                
+
+				#print "Element" + r["name"]
+				for ind,itm in enumerate(reversed(res[:index])):
+					if abs(itm["left"]-r["left"])<15 and abs(itm["top"]-r["top"])<5 and any(tag in itm["tag"] for tag in textTags):
+						if itm["innerText"] !=None:	  
+							text = filterData(itm["innerText"])
+							#print "Left" + itm["innerText"]
+							if len(text)>1 and len(text)<35 :							
+								element.parsed_texts.append(text)
+								element.parsed_methods.append("LeftSide_InnerText")
+								element = add_InnerText(element)                
+								flag=True if len(element.categories[-1])>1 else False
+								break;          
+					elif abs(itm["top"] - r["top"])<15 and abs(itm["left"]-r["left"])<5 and any(tag in itm["tag"] for tag in textTags):
+						if itm["innerText"] !=None:	  		
+							text = filterData(itm["innerText"])				
+							#print "top" +itm["innerText"]
+							if len(text)>1 and len(text)<35 :							
+								element.parsed_texts.append(text)
+								element.parsed_methods.append("TopSide_InnerText")
+								element = add_InnerText(element)           
+								flag=True if len(element.categories[-1])>1 else False
+								break;
+				if flag==False:           
+					text=screenshot_slicing.img_to_text(path,'I',r["left"]-5,r["top"]-5,r["right"]+5,r["bottom"]+5,3) 
+					#print('Screenshot inner text: ',text)
+					text = filterData(text)
+					if len(text)>1 :    					
+						element.parsed_texts.append(text)
+						element.parsed_methods.append("Image_OCR_Read_Inside")
+						element = add_InnerText(element)  					    
+						flag=True if len(element.categories[-1])>1 else False       
+	          
+				if flag==False:           
+					text=screenshot_slicing.img_to_text(path,'L',r["left"]-200,r["top"],r["left"],r["bottom"],3)
+					#print(text)  
+					text = filterData(text)  
+					if len(text)>1 :      					
+						element.parsed_texts.append(text)
+						element.parsed_methods.append("Image_OCR_Read_Left")
+						element = add_InnerText(element)                    	
+						flag=True if len(element.categories[-1])>1 else False  
+					else:          
+						text=screenshot_slicing.img_to_text(path,'T',r["left"],r["top"]-(r["height"]+5),r["right"],r["bottom"]-(r["bottom"]-r["top"]),3)  
+						#print('Screenshot result:',text)
+						text = filterData(text)    
+						if len(text)>1 :						
+							element.parsed_texts.append(text)
+							element.parsed_methods.append("Image_OCR_Read_Top")
+							element = add_InnerText(element)                
+							flag=True if len(element.categories[-1])>1 else False        
+				if r["placeholder"]!='null' and flag!=True:      
+					flag=True;
+					element.parsed_texts.append(r["placeholder"])
+					element.parsed_methods.append("placeholder")
+					element = add_InnerText(element)
+				category, value, parsed_text, parsed_method = element.get_category_value()
+				logger.info('parse_elements(%s) Element ->  Name: %s ;  Html_Id: %s ; Category: %s ; Value: %s; Parsed_text: %s; Parsed_method:%s' % ( page.page_image_id,element.name, element.html_id,category,value,parsed_text,parsed_method))
+				category_id = phish_db_layer.find_category_id(category)
+				element_db = phish_db_schema.Elements(element_name = element.name, 
+													  element_tag = element.tag, 
+													  element_html_id = element.html_id, 
+													  element_position =element.position, 
+													  element_form = element.form, 
+													  element_value = value,
+													  element_frame_index = element.frameIndex,
+													  field_category_id = category_id,
+													  element_parsed_text = parsed_text, 
+													  element_parsed_method = parsed_method)
+				page.elements.append(element_db)
+				# phish_db_layer.add_element_info(element_db)
+				print('parse_elements(%s) Element ->  Name: %s ;  Html_Id: %s ; Category: %s ; Value: %s; Parsed_text: %s; Parsed_method:%s' % ( page.page_image_id,element.name, element.html_id,category,value,parsed_text,parsed_method))
+	except Exception as pre:
+		print('Parse_Elements :: Exception !! ',pre)	
 	return page
 
 
 async def reset_element(element, page):
 	try:
-		#print('Reset Element!!')
-		# print(element.getProperty("type"))
-
-		# print(await element.isIntersectingViewport())
-		if  await element.getProperty("type") not in ["hidden","button","reset","a","checkbox","submit","radio"] and await element.isIntersectingViewport(): 	
+		if  await element.getProperty("type") not in ["hidden","button","reset","a","checkbox","submit","radio"] and await element.isIntersectingViewport(): 
+			print('Resetting Element!!')	
 			await element.focus()			
 			await page.keyboard.down('Control');
 			await page.keyboard.press('A');
@@ -173,6 +178,7 @@ async def reset_element(element, page):
 			await page.keyboard.press('Backspace');
 			await page.keyboard.press('Enter')
 	except Exception as e:
+		print('Reset Element!!', e)
 		logger.info('reset_element(): Exception!!') 
 
 async def crawl_web_page(phish_url, phish_id=-1):
@@ -197,12 +203,13 @@ async def crawl_web_page(phish_url, phish_id=-1):
 							
 							return elements; }
 							"""
-	js_domelements_position = """ ()=>{  
+	js_domelements_position = """function get_elements(el, frameIndex){  
 							var tags = [];
-							var recs = [];    
+							var recs = [];   
+							var iframe_count = 0 
 							width  =Math.max(document.body.scrollWidth, document.body.offsetWidth, document.documentElement.clientWidth, document.documentElement.scrollWidth, document.documentElement.offsetWidth)
-							
-							var e = document.getElementsByTagName('*');   
+							if(el==null) return recs;
+							var e = el.getElementsByTagName('*');   
 							for (var i=0; i<e.length; i++) {
 								var rect           = e[i].getBoundingClientRect();
 								
@@ -225,10 +232,15 @@ async def crawl_web_page(phish_url, phish_id=-1):
 								recs[i].visibility = e[i].style.visibility;
 								recs[i].placeholder= e[i].placeholder!=null?e[i].placeholder!=''?e[i].placeholder:'null':'null';
 								recs[i].form = 'Null'
-								
-								
+								recs[i].frameIndex = frameIndex
+								if (e[i].tagName =='IFRAME')
+								{
+									
+									frame_elements = get_elements (e[i].contentDocument, iframe_count)
+									recs = recs.concat(frame_elements)
+									iframe_count = iframe_count + 1
+								}								
 							}
-
 							return recs; }
 							"""
 	js_targeted_brands="""()=>{
@@ -306,6 +318,8 @@ async def crawl_web_page(phish_url, phish_id=-1):
 	count=phish_id
 	page_count=0
 	site_pages =[]
+	page_requests = []
+	page_responses = []
 
 	async def is_same_page():
 		time.sleep(5)
@@ -333,7 +347,8 @@ async def crawl_web_page(phish_url, phish_id=-1):
 		req_url = req.url
 		req_domain =  '.'.join(tldextract.extract(req_url)[1:]) 
 		req_info = phish_db_schema.Page_Request_Info(request_url = req_url, request_domain = req_domain, request_method = req.method, request_type = req.resourceType)
-		phish_db_layer.add_page_req_info(req_info)
+		# phish_db_layer.add_page_req_info(req_info)
+		page_requests.append(req_info)
 
 		await req.continue_()
 
@@ -344,37 +359,51 @@ async def crawl_web_page(phish_url, phish_id=-1):
 
 		res_name = (res.url.split('?')[0]).split('/')[-1]
 		dpath = dir_path+'/resources/'+str(count)		
+		digest = ''
+
 		if not os.path.exists(dpath):
 			os.makedirs(dpath)
 		
 		file_path= dpath+"/"+ res_name 
-		
 		try:
+		
 			# Get response content and store it in a file
 			txt = await res.buffer()			
 			txt_type = 'w' if type(txt) is str else 'wb' 
 			with open(file_path, txt_type ) as fw:	
 				fw.write(txt)
+		
+			# Generate hash of requested file
+			hasher = hashlib.sha1()
+			with open(file_path, 'rb') as afile:
+			    buf = afile.read()    
+			    hasher.update(buf)
+			digest = hasher.hexdigest()			
 		except Exception as e:
-			logger.info('handle_response: Exception!!'+str(e)) 
-
-		# Generate hash of requested file
-		hasher = hashlib.sha1()
-		with open(file_path, 'rb') as afile:
-		    buf = afile.read()    
-		    hasher.update(buf)
-		digest = hasher.hexdigest()
+			logger.info('handle_response: Exception!! ::'+res.url+' :: '+str(e))
 
 		rsp_info = phish_db_schema.Page_Response_Info(response_url = res.url, response_file_path = file_path, response_file_hash = digest)
-		phish_db_layer.add_page_rsp_info(rsp_info)
+		# phish_db_layer.add_page_rsp_info(rsp_info)
+		page_responses.append(rsp_info)
 
-	async def get_field(field_selector):
-		await pup_page.waitFor(field_selector)
-		field = await pup_page.J(field_selector);
-		form = await pup_page.Jeval(field_selector, "(el)=>{ return el.form.name }");
-		form_id = await pup_page.Jeval(field_selector, "(el)=>{ return el.form.id }");
+	def get_frame(frameIndex):
+		if frameIndex == -1:
+			frame = pup_page
+		else:
+			frame = pup_page.frames[frameIndex+1]
+		return frame
 
-		return field, form, form_id
+	async def get_field(field_selector, frameIndex):
+		try:
+			frame = get_frame(frameIndex)
+			await frame.waitFor(field_selector)
+			field = await frame.J(field_selector);
+			form = await frame.Jeval(field_selector, "(el)=>{ return el.form.name }");
+			form_id = await frame.Jeval(field_selector, "(el)=>{ return el.form.id }");
+			return field, form, form_id
+		except Exception as e:
+			logger.info('get_field(%s,%s): Exception -> Failed getting field!! %s ;' %(str(field_selector), str(frameIndex), str(e)))
+			return None, '', ''
 							
 	async def input_values(curr_page, curr_url):
 		###
@@ -393,22 +422,25 @@ async def crawl_web_page(phish_url, phish_id=-1):
 
 				if 'Unknown' not in element.element_name and len(element.element_name)>0:	
 					field_selector = 'input[name='+element.element_name+']'					
-					field, form, form_id = await get_field(field_selector)
+					field, form, form_id = await get_field(field_selector, element.element_frame_index)
 
 				elif 'Unknown' not in element.element_id and len(element.element_id)>0:
 					field_selector = 'input[id='+element.element_id+']'	
-					field, form, form_id = await get_field(field_selector)
+					field, form, form_id = await get_field(field_selector, element.element_frame_index)
 
 				### Type the value in the field 
 				if field !=None: 
-					await reset_element(field,pup_page)							
+					await reset_element(field, pup_page)							
 					print('typing value ::', element.element_value)
+					# print(field)
+					await field.focus()
 					await field.type(element.element_value)
-					time.sleep(2)
-					await pup_page.Jeval(field_selector, "(el)=>{ el.blur(); }");
+					time.sleep(3)
+					# await get_frame(element.element_frame_index).Jeval(field_selector, "(el)=>{ el.blur(); }");
 					time.sleep(3)
 
 			except Exception as ve:
+				print('Input Value!!', ve)
 				logger.info('crawl_page_info(%s,%s): Exception -> Failed on entering value ;%s' %(str(count), curr_url, str(ve)))
 		
 		print(form,form_id)
@@ -421,6 +453,7 @@ async def crawl_web_page(phish_url, phish_id=-1):
 
  	### Visit the page 
 	try:
+		time.sleep(3)
 		await pup_page.setViewport({'width':1366, 'height':768})
 		await pup_page.goto(phish_url, {'waitUntil':['networkidle0', 'domcontentloaded'],'timeout':900000 })		
 	except Exception as e:
@@ -464,7 +497,9 @@ async def crawl_web_page(phish_url, phish_id=-1):
 				print('Crawling Page :: ',loop_count, ' :: ' , title)
 
 				### Append page details to site
-				page = phish_db_schema.Pages(page_url = curr_url,page_title = title, page_image_id = str(count)+"_"+str(page_count)+'_screenshot.png')				
+				page = phish_db_schema.Pages(page_url = curr_url,page_title = title, page_image_id = str(count)+"_"+str(page_count)+'_screenshot.png')		
+				page.requests = page_requests
+				page.responses = page_responses		
 				site_pages.append(page)
 				
 				### Stop execution when page navigated to a different domain
@@ -473,11 +508,14 @@ async def crawl_web_page(phish_url, phish_id=-1):
 					phish_db_layer.add_pages_to_site(phish_id, site_pages, phish_url)
 					is_run_complete = True
 					return;
-
+				time.sleep(5)
 				### Get DOM details of the page
-				res = await pup_page.evaluate(js_domelements_position)
+				await pup_page.addScriptTag({'content': js_domelements_position})
+				res = await pup_page.evaluate("()=> get_elements(document, -1)")
+
 				dom_tree= await pup_page.evaluate(js_elements_tree)	
 
+				print(dom_tree)
 				### Check if the DOM structure is same as the previously visited page
 				samePage = samePage+1 if temp==dom_tree else 0;
 
@@ -579,7 +617,8 @@ async def crawl_web_page(phish_url, phish_id=-1):
 
 
 				page_count = page_count+1			
-				
+				page_requests = []
+				page_responses = []
 				# await pup_page.reload()  		
 				time.sleep(5)
 			except Exception as e:

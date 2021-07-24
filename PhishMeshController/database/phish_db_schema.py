@@ -150,7 +150,6 @@ class Elements(base):
   element_parsed_method = Column(String(100))
   page_id = Column(Integer, ForeignKey('tbl_Pages.page_id')) 
   field_category_id = Column(Integer, ForeignKey('tbl_FieldCategory.field_category_id'))
-  element_frame_index = Column(Integer)
   def __repr__(self):
     return 'Elements  : "%s" "%s" "%s" "%s" "%s" %d' % (self.element_tag, self.element_name, self.element_html_id, self.element_parsed_text, self.element_value,  self.field_category_id)
 

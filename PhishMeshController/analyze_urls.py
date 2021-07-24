@@ -7,22 +7,13 @@ import datetime
 import os
 import json 
 import sys
-sys.path.append("../SWSec_Analysis/database")
+import csv 
 
-import db_operations
-
-# from docker_config import *
+from database import phish_db_layer
+from docker_config import *
 from docker_monitor import *
 
-# import logging
-
-
-
-
-# logging.basicConfig(filename='output_new.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s',level=logging.INFO)
-
 client = docker.from_env()
-dbo = db_operations.DBOperator()
 
 container_timeout = 300
 urls_path = '' 
@@ -41,14 +32,14 @@ def set_config():
 		container_timeout = CRAWL_TIMEOUT
 		urls_path = CRAWL_URL_PATH
 		max_containers = CRAWL_MAX_CONTAINERS
-		id_prefix = 'Seed_Alexa_'
+		id_prefix = 'Phish_'
 		iteration_count = 0
 		
 	else:
 		container_timeout = ANALYSIS_TIMEOUT
 		urls_path = ANALYSIS_URL_PATH
 		max_containers = ANALYSIS_MAX_CONTAINERS
-		id_prefix = 'Mal_' if IS_MALICIOUS else 'Seed_Alexa_Ana_'
+		id_prefix = 'Mal_' if IS_MALICIOUS else 'Phish_'
 		iteration_count = 0
 		
 
@@ -60,7 +51,7 @@ def process_urls_parallel(analysis_urls, script_file, cont_timeout, max_cont):
 		while len(urls)>0:
 			## Submit jobs to container ##
 			for i in range(min(len(urls),max_cont)):
-				id = urls.keys()[0]
+				id = list(urls.keys())[0]
 				itm = urls.pop(id)
 				url = itm['url']
 				# print(url)
@@ -88,21 +79,14 @@ def process_urls_parallel(analysis_urls, script_file, cont_timeout, max_cont):
 						get_logger('container_'+id).info(get_time() +  'Container_' + str(id) +': Exception ')
 						get_logger('container_'+id).info(exc)			
 							
-					# export_container_logs(id, v_count)	
-
-					# if sw_found_pwa(id,v_count) and CRAWL_SW==True:						
-					# 	print('sw found', id)
-					# 	with open('./data/crawl_sites_sw.csv','a+') as f:
-					# 		f.write(id+','+url+',0\n')
-					# 	rank = id.split('_')[-1] 
-					# 	dbo.update_alexa_sites_table(rank, None, 'is_sw_found', 'True')
-
+					
 					stop_container(id)
 					
 					processed_url_ids.add(id)	
 			except Exception as e:
 				##  Stop the containers that didn't complete before timeout and export data
-				for future in futures.keys():
+				fts = list(futures.keys())
+				for future in fts:
 					id, v_count, url = futures.pop(future)				
 					try:				
 						get_logger('container_'+id).info(get_time() + 'Container_'+ str(id) +': Timeout Occured!!'	)	
@@ -113,14 +97,7 @@ def process_urls_parallel(analysis_urls, script_file, cont_timeout, max_cont):
 						get_logger('container_'+id).info(exc)			
 							
 					export_container_logs(id, v_count)	
-					# if sw_found_pwa(id,v_count) and CRAWL_SW==True:
-					# 	rank = id.split('_')[-1]
-					# 	dbo.update_alexa_sites_table(rank, None, 'is_sw_found', 'True')
-					# 	with open('./data/crawl_sites_sw.csv','a+') as f:
-					# 		f.write(id+','+url+',0\n')
-					# else:
-					# 	rank = id.split('_')[-1]
-					# 	dbo.update_alexa_sites_table(rank, None, 'is_crawled', 'False')
+					
 					stop_container(id)
 								
 	return processed_url_ids
@@ -133,111 +110,54 @@ def stop_running_containers():
 
 def fetch_urls_from_db(count=0):
 	if count>0:
+		phishtank_dets = phish_db_layer.fetch_phishtank_urls(count)
 		print('Fetching URLS ::'+str(count))
-		#results = api_requests.fetch_urls_api(count,'true','true')
-		results = dbo.get_seed_urls(CRAWL_SW, count)
+		
 		crawl_urls={}
-		for item in results:
-			
-			id = id_prefix + str(item[0])
-			url = item[1]			
-			crawl_urls[str(id)]={'url': url,'count':0}
-			
-			if CRAWL_SW:
-				dbo.update_alexa_sites_table(item[0], None,'is_crawled','True')
-			else:
-				dbo.update_alexa_sites_table(item[0], None,'is_analyzed','True')
-			
+		for item in phishtank_dets:
+			id = id_prefix + str(item.phish_tank_ref_id)
+			crawl_urls[str(id)] = {'url' : item.phish_tank_url, 'count':0}			
+			item.is_analyzed = True
+			phish_db_layer.update_analysis_url(item)
 		return crawl_urls
 	return {}
 
 
-def fetch_urls_with_notifications(count=100):
+def fetch_from_file():
+	urls_path = '../data/alexa_urls_login.csv'
 
-	crawl_urls={}
-	print('Fetching URLS ::')
-	# results = api_requests.fetch_urls_api(count,'true','true')
-
-	# sites = ['https://my.sweeps4life.com/?aff_sub=23&aff_id=1039&aff_sub5=swrota&aff_sub4=0&aff_sub2=15041&first_name=&last_name=&email=&street1=%7Baddress%7D&city=Athens&state_initials=%7Bstate%7D&zipcode=&gender=%7Bgender%7D&date_of_birth=%7Bdob%7D&phone=%7Bphone%7D',
-	# 'https://get.topsweeps.com/?transaction_id=102209154234281659105440911501&aff_id=1102&offer_id=557&url_id={url_id}&firstname={firstname}&lastname={lastname}&email=&dob-m={dob-m}&dob-d={dob-d}&dob-y={dob-y}&gender={gender}&address={address}&phone={phone}&city={city2}&state={state}&zip={zip}&aff_sub=PN_TAG_01ARATOP_s&aff_sub2=2019-08-25T16:55:48.150Z&aff_sub3=&aff_sub4=&aff_sub5=push&i={i}',
-	# 'https://win.click4riches.info/api/offer',
-	# 'https://win.omgsweeps.info/api/offer',
-	# 'https://u-s-news.com/todays-top-stories/'	
-	# ]
-
-	# for i,url in enumerate(sites):
-	# 	crawl_urls['M_run2_'+str(i)] = {'url':url, 'count':0}
-
-
-	if '.csv' in urls_path:
-		import csv 
+	crawl_urls = {}
+	if '.csv' in urls_path:		
 		with open(urls_path) as cf:
 			csvreader = csv.DictReader(cf, delimiter=',')
 			i = 0
 			for row in csvreader:
 				# print(row)
-				i +=1
-				# if  not row['id'].isdigit():
-				# 	continue 
+				i +=1		
+				id = id_prefix + 'top_'+row['rank']+'_'+ str(i)
+				url = row['url']				
+				crawl_urls[id] = {'url':url, 'count':0}
 				
-				id = id_prefix + str(row['id'])
-				url = row['url']
-				if int(row['id'].split('_')[2]) <4000:
-					if (os.path.exists('./sw_sec_containers_data/container_'+id)):
-						continue
-					crawl_urls[id] = {'url':url, 'count':0}
-				
-	elif '.json' in urls_path:
-		with open(urls_path,'r') as o:
-			sites = json.loads(o.read())			
-		for item in sites:
-			id = id_prefix+(item['Country']['Rank'])
-			url = 'https://' + item['DataUrl']	
-			if not os.path.exists('./output_logs/container_'+id+'.log'):
-				crawl_urls[str(id)]={'url': url,'count':0}
-
-
-	#
 	return crawl_urls
-	
 
-def process_urls_with_notifications():	
+def process_phishing_urls():	
 	while True:
-		notification_urls  =  fetch_urls_from_db(max_containers) #fetch_urls_with_notifications()
-		notification_urls_keys = sorted(notification_urls.keys(), key = lambda x: int(x.split('_')[-1]))
-
-		print('started processing')
-		print(len(notification_urls))	
-		print(notification_urls_keys[:5])
-		for i in range(0,len(notification_urls),max_containers):	
-
-			notification_urls_set = {k:notification_urls[k] for k in notification_urls_keys[i:i+max_containers]}
-			while notification_urls_set:			
-				processed_ids = process_urls_parallel(notification_urls_set, collection_script, container_timeout, max_containers)		
-				## Retain only those containers that requested notifications
-				notification_urls_set = {id:info for id,info in notification_urls_set.items() if info['count']>0 or id in processed_ids}
-				for key in notification_urls_set.keys():
-					itm = notification_urls_set[key]							
-					if itm['count'] == iteration_count:
-						## Resume each container `iteration_count` number of times
-						notification_urls_set.pop(key)
-						notification_urls.pop(key)
-					else:
-						itm['count'] = itm['count']+1
-				if len(client.containers.list())>30:
-					print('docker pruning started!!')
-					docker_prune()
+		phish_urls  =  fetch_from_file() #fetch_urls_from_db(max_containers) 
+		processed_ids = process_urls_parallel(phish_urls, collection_script, container_timeout, max_containers)		
+		if len(client.containers.list())>30:
+			print('docker pruning started!!')
+			docker_prune()
 
 		
 def main():
-	stop_running_containers()
+	# stop_running_containers()
 	'''
 	prune unused removed containers
 	'''
-	docker_prune()
+	# docker_prune()
 	set_config()
-	print('SWSec_PWA :: Collecting SW Logs...' )
-	process_urls_with_notifications()
+	print('PhishMeshController :: Started Crawling Phish URLs...' )
+	process_phishing_urls()
 
 
 

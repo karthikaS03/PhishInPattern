@@ -19,7 +19,9 @@ def initiate_crawl(phish_url,phish_id):
 for item in phishtank_dets:
 	print(item)
 	# asyncio.get_event_loop().run_until_complete( crawl_page.crawl_web_page(item['phish_url'], item['phish_id']))
-	p = multiprocessing.Process(target=initiate_crawl, args=(item['phish_url'], item['phish_id']))
+	p = multiprocessing.Process(target=initiate_crawl, args=(item.phish_tank_url, item.phish_tank_ref_id))
+	item.is_analyzed = False
+	phish_db_layer.update_analysis_url(item)
 	p.start()
 
 	# Wait for 10 seconds or until process finishes
@@ -29,6 +31,8 @@ for item in phishtank_dets:
 		p.join(60)
 		# If thre0ad is still active
 		if not p.is_alive():
+			item.is_analyzed = True
+			phish_db_layer.update_analysis_url(item)
 			break
 	if p.is_alive():
 		# print "running... let's kill it..."
@@ -36,6 +40,8 @@ for item in phishtank_dets:
 		time.sleep(5)
 		print(p)
 		print('is_process_alive',p.is_alive())
+		item.is_analyzed = True
+		phish_db_layer.update_analysis_url(item)
 		# if p.is_alive():		
 		# 	p.kill()
 		# 	p.join()

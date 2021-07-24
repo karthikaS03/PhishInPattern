@@ -53,7 +53,7 @@ libexpat1 libfontconfig1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 libglib2.0-0 li
 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 \
 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 \
 fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst  \
-ca-certificates fonts-liberation libappindicator1 libnss3 lsb-release xdg-utils wget default-libmysqlclient-dev libenchant-dev && \
+ca-certificates fonts-liberation libappindicator1 libnss3 lsb-release xdg-utils wget default-libmysqlclient-dev libenchant-dev libleptonica-dev tesseract-ocr libtesseract-dev && \
 wget https://github.com/Yelp/dumb-init/releases/download/v1.2.1/dumb-init_1.2.1_amd64.deb && \
 dpkg -i dumb-init_*.deb && rm -f dumb-init_*.deb && \
 apt-get clean && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
@@ -88,16 +88,20 @@ RUN  mkdir -p /opt/bin
 
 # Add user so we don't need --no-sandbox.
 RUN  mkdir /home/pptruser/app \
-  && mkdir /home/pptruser/app/images \
-  && mkdir /home/pptruser/app/logs \
-  && mkdir /home/pptruser/app/resources \
-
- 
+  && mkdir /home/pptruser/data \
+  && mkdir /home/pptruser/data/images \
+  && mkdir /home/pptruser/data/logs \
+  && mkdir /home/pptruser/data/db_logs \
+  && mkdir /home/pptruser/data/resources \ 
 	&& mkdir -p /home/pptruser/Downloads \
     && chown -R pptruser:pptruser /home/pptruser/app \
-    && chown -R pptruser:pptruser /home/pptruser/app/resources \
-    && chown -R pptruser:pptruser /home/pptruser/app/images \
-    && chown -R pptruser:pptruser /home/pptruser/app/logs     
+    && chown -R pptruser:pptruser /home/pptruser/data/resources \
+    && chown -R pptruser:pptruser /home/pptruser/data/images \
+    && chown -R pptruser:pptruser /home/pptruser/data/logs    \
+    && chown -R pptruser:pptruser /home/pptruser/data/db_logs \
+    && chown -R pptruser:pptruser /home/pptruser/data 
+    
+
 
 
 #======================================
@@ -106,12 +110,12 @@ RUN  mkdir /home/pptruser/app \
 #COPY check-grid.sh entry_point.sh /opt/bin/
 # RUN chmod +x /opt/bin/check-grid.sh
 
-COPY entry_point.sh /opt/bin/
+COPY docker_phishmesh_puppeteer/entry_point.sh /opt/bin/
 
 #======================================
 # Add Supervisor configuration file
 #======================================
-COPY supervisord.conf /etc
+COPY docker_phishmesh_puppeteer/supervisord.conf /etc
 RUN  mkdir -p /var/run/supervisor /var/log/supervisor \
   && chmod -R 777 /var/run/supervisor /var/log/supervisor /etc/passwd \
   && chgrp -R 0 ${HOME} /var/run/supervisor /var/log/supervisor \
@@ -202,7 +206,7 @@ USER pptruser
 # #==============================
 # # Scripts to run XVFB
 # #==============================
-COPY start-xvfb.sh \
+COPY docker_phishmesh_puppeteer/start-xvfb.sh \
       /opt/bin/
 
 
@@ -270,8 +274,8 @@ RUN sudo chmod -R 777 ${HOME} \
 #==============================
 # Scripts to run fluxbox and x11vnc
 #==============================
-COPY start-fluxbox.sh \
-      start-vnc.sh \
+COPY docker_phishmesh_puppeteer/start-fluxbox.sh \
+      docker_phishmesh_puppeteer/start-vnc.sh \
       /opt/bin/
 
 
@@ -281,16 +285,14 @@ RUN chmod +x /opt/bin/start-fluxbox.sh
 RUN chmod +x /opt/bin/start-vnc.sh
 
 
-ADD ../PhishMeshCrawler /home/pptruser/app
+ADD PhishMeshCrawler /home/pptruser/app
 
-RUN chown -R pptruser:pptruser /home/pptruser/app/database/logs \
-    && chown -R pptruser:pptruser /home/pptruser/app/logs 
-
+RUN chown -R pptruser:pptruser /home/pptruser/app
 
 
 # Install python dependencies
-COPY python_reqs.txt /tmp/python_reqs.txt
-COPY python_reqs_pre.txt /tmp/python_reqs_pre.txt
+COPY docker_phishmesh_puppeteer/python_reqs.txt /tmp/python_reqs.txt
+COPY docker_phishmesh_puppeteer/python_reqs_pre.txt /tmp/python_reqs_pre.txt
 RUN pip3 install -r /tmp/python_reqs_pre.txt  
 RUN pip3 install -r /tmp/python_reqs.txt
 #RUN pip3 install $(grep -vE "^\s*#" /tmp/python_reqs.txt  | tr "\n" " ")
@@ -300,7 +302,7 @@ USER pptruser
 #==============================
 # Supervisor configuration file
 #==============================
-COPY display.conf /etc/supervisor/conf.d/
+COPY docker_phishmesh_puppeteer/display.conf /etc/supervisor/conf.d/
 
 
 EXPOSE 4444

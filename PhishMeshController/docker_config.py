@@ -3,7 +3,7 @@ import os
 project_dir = os.getcwd()
 
 #Docker
-docker_image = 'phishpro_puppeteer:ver1'
+docker_image = 'phishmesh_puppeteer:ver1'
 docker_user = 'pptruser'
 docker_container_home = '/home/pptruser/'
 docker_shared_dir_root = project_dir
@@ -18,7 +18,7 @@ vols ={}#{ docker_shared_dir_root + '/app' :{'bind':docker_container_home + 'app
 collection_script   = 'crawl_page.py'
 
 
-ANALYSIS_MAX_CONTAINERS = 5
+ANALYSIS_MAX_CONTAINERS = 10
 ANALYSIS_TIMEOUT = 600  # 900 ->15 mins
 
 
@@ -36,7 +36,7 @@ IS_MALICIOUS = False
 if CRAWL_SW ==True:
 	CONFIG_EXPORT_PATH = './crawl_quiet_permissions_data/' './crawl_containers_data/'
 else:
-	CONFIG_EXPORT_PATH = './sw_sec_containers_data/'
+	CONFIG_EXPORT_PATH = './phish_containers_data/'
 
 def get_logger(name, init=0):    
 	import logging

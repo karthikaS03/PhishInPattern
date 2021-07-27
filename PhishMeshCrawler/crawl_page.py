@@ -67,10 +67,7 @@ def parse_elements(res,path,page):
 			#Filter Input and Select tags which are not hidden
 			# print(r["tag"])
 			# print('******************************Processing Element ::***********************************************')
-			# print(r)
-
-			# print (r["tag"] +" " + str(r["type"]) +" "+" " + str(r["innerText"]) +" " +r["tag"])
-			
+		
 			if any(tag in r["tag"] for tag in ['INPUT']) and 'type' in r and r["type"] not in ['hidden','button','submit','reset','radio','checkbox'] and r["visibility"]!='hidden':
 				# print('******************************Processing Element ::***********************************************')
 				# print(r)
@@ -177,7 +174,7 @@ async def reset_element(element, page, field_selector):
 	try:
 		# await get_frame(element.element_frame_index, page).click()
 		if  await element.getProperty("type") not in ["hidden","button","reset","a","checkbox","submit","radio"] and await element.isIntersectingViewport(): 
-			print('Resetting Element!!')	
+			# print('Resetting Element!!')	
 			await element.focus()
 			# await  get_frame(element.element_frame_index, page).focus(field_selector)			
 			cnt = 0
@@ -193,7 +190,7 @@ async def reset_element(element, page, field_selector):
 		print('Reset Element!!', e)
 		logger.info('reset_element(): Exception!!') 
 
-async def crawl_web_page(phish_url, phish_id=-1):
+async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 
 	browser = await launch({ 'headless':False, 'args': [                             
 	                            '--no-sandbox',
@@ -234,14 +231,14 @@ async def crawl_web_page(phish_url, phish_id=-1):
 									recs[i].height = rect.height
 								}
 								recs[i].innerText  = e[i].textContent ;        
-								recs[i].tag        = e[i].tagName;
+								recs[i].tag        = e[i].tagName!= undefined? e[i].tagName : '';
 								recs[i].id         = e[i].id!=null?e[i].id:'None';
 								recs[i].name       = e[i].name!=null?e[i].name:'None';
 								recs[i].type       = e[i].type ;
 								recs[i].text       = e[i].Text ;
 								recs[i].value      = e[i].value ;
 								//recs[i].left       = (e[i].clientLeft/document.documentElement.clientWidth )* width;        
-								recs[i].visibility = e[i].style.visibility;
+								recs[i].visibility = e[i].style!= undefined ? e[i].style.visibility : 'null' ;
 								recs[i].placeholder= e[i].placeholder!=null?e[i].placeholder!=''?e[i].placeholder:'null':'null';
 								recs[i].form = 'Null'
 								recs[i].frameIndex = frameIndex
@@ -328,16 +325,20 @@ async def crawl_web_page(phish_url, phish_id=-1):
 	temp = None 
 	samePage = 0
 	count=phish_id
+	res_count = 1
 	page_count=0
 	site_pages =[]
 	page_requests = []
 	page_responses = []
 
 	async def is_same_page():
-		time.sleep(5)
-		dom_tree= await pup_page.evaluate(js_elements_tree)
-		print('Is Same Page ::' , temp==dom_tree)
-		return temp == dom_tree
+		try:
+			time.sleep(5)
+			dom_tree= await pup_page.evaluate(js_elements_tree)
+			print('Is Same Page ::' , temp==dom_tree)
+			return temp == dom_tree
+		except Exception as e:
+			print('is_same_page :: Exception ',e)
 
 	async def clear_overlays():
 		field_buttons = await pup_page.JJ('button')
@@ -370,6 +371,8 @@ async def crawl_web_page(phish_url, phish_id=-1):
 		###
 
 		res_name = (res.url.split('?')[0]).split('/')[-1]
+		res_name = res_name if len(res_name)>1: else 'res_'+str(site_obj.site_id) + '_'+res_count
+		res_count = res_count + 1
 		dpath = dir_path+'/resources/'+str(count)		
 		digest = ''
 
@@ -418,6 +421,9 @@ async def crawl_web_page(phish_url, phish_id=-1):
 		form = None 
 		form_id = None
 		field_selector = ''
+		if curr_page.elements== None:
+			return form,form_id
+
 
 		for element in curr_page.elements:
 			try:
@@ -435,7 +441,7 @@ async def crawl_web_page(phish_url, phish_id=-1):
 					field, form, form_id = await get_field(field_selector, element.element_frame_index)
 
 				### Type the value in the field 
-				if field !=None: 
+				if field !=None and await field.isIntersectingViewport(): 
 					await reset_element(field, pup_page, field_selector)							
 					print('typing value ::', element.element_value)
 					# print(field)
@@ -447,9 +453,8 @@ async def crawl_web_page(phish_url, phish_id=-1):
 
 			except Exception as ve:
 				print('Input Value!!', ve)
-				logger.info('crawl_page_info(%s,%s): Exception -> Failed on entering value ;%s' %(str(count), curr_url, str(ve)))
+				logger.info('Input Value (%s,%s): Exception -> Failed on entering value ;%s' %(str(count), curr_url, str(ve)))
 		
-		print(form,form_id)
 		return form, form_id
 
 	### Intercept requests and responses from the pages
@@ -503,7 +508,7 @@ async def crawl_web_page(phish_url, phish_id=-1):
 				print('Crawling Page :: ',loop_count, ' :: ' , title)
 
 				### Append page details to site
-				page = phish_db_schema.Pages(page_url = curr_url,page_title = title, page_image_id = str(count)+"_"+str(page_count)+'_screenshot.png')		
+				page = phish_db_schema.Pages(site_id = site_obj.site_id ,page_url = curr_url,page_title = title, page_image_id = str(count)+"_"+str(page_count)+'_screenshot.png')		
 				page.requests = page_requests
 				page.responses = page_responses		
 				site_pages.append(page)
@@ -521,7 +526,7 @@ async def crawl_web_page(phish_url, phish_id=-1):
 
 				dom_tree= await pup_page.evaluate(js_elements_tree)	
 
-				print(dom_tree)
+				# print(dom_tree)
 				### Check if the DOM structure is same as the previously visited page
 				samePage = samePage+1 if temp==dom_tree else 0;
 
@@ -545,7 +550,8 @@ async def crawl_web_page(phish_url, phish_id=-1):
 				page = parse_elements(res,path,page)
 				is_submit_success = False
 
-				SUBMIT_METHODS = ['button', 'form_name', 'form_id', 'submit_button', 'enter_submit' ]
+				
+				SUBMIT_METHODS = [ 'form_name', 'form_id', 'submit_button','button', 'enter_submit' ]
 
 				### Try submitting via multiple methods
 				for sub_method in SUBMIT_METHODS:
@@ -559,52 +565,68 @@ async def crawl_web_page(phish_url, phish_id=-1):
 						if sub_method == 'button':
 							field_buttons = await pup_page.JJ('button')
 							for field_btn in field_buttons:
-								print('Button clicked')
-								print(await field_btn.getProperty('name') )
+								await input_values(page,curr_url)
+								time.sleep(5)
+								print('Entered input values!!')
+								
+								
 								await field_btn.focus()
 								if await field_btn.isIntersectingViewport():
 									try:					
-										await field_btn.click()    
-										
+										print('Button clicked')
+										await field_btn.click()   
 										is_submit_success = not await is_same_page()
 										if is_submit_success:
 											break
 									except Exception as fe:
 										print(fe)
 								await pup_page.goto(curr_url, {'waitUntil':['networkidle0', 'domcontentloaded'],'timeout':900000 })
-								await input_values(page,curr_url)
-								time.sleep(5)
+								
 							else:
 								continue
 							break
 
-						elif sub_method == 'form_name':
+						if sub_method == 'form_name':
 							field_submit = await pup_page.JJ('form[name="'+form+'"]')
-							if len(field_submit)>0:
+							if len(field_submit)>0:								
 								print('form submitted by name')
-								await pup_page.Jeval('form[name="'+form+'"]', "(fm) =>{fm.submit();}") 	
-								
+								await pup_page.Jeval('form[name="'+form+'"]', "(fm) =>{fm.submit();}") 									
 								is_submit_success = not await is_same_page()
+							else:
+								sub_method = SUBMIT_METHODS.index(sub_method)+1
 
-						elif sub_method == 'form_id':
+						if sub_method == 'form_id':
 							field_submit = await pup_page.JJ('form[id="'+form_id+'"]')
 							if len(field_submit)>0:
+								# form, form_id = await input_values(page, curr_url)
+								# time.sleep(5)
+								# print('Entered input values!!')
 								print('form submitted by id')
 								await pup_page.Jeval('form[id="'+form_id+'"]', "(fm) =>{fm.submit();}") 
-
 								is_submit_success = not await is_same_page()
+							else:
+								sub_method = SUBMIT_METHODS.index(sub_method)+1
 
-						elif sub_method == 'submit_button':
+						if sub_method == 'submit_button':
 							field_submit = await pup_page.JJ('input[type="submit"]')
 							if len(field_submit) > 0:
+								# form, form_id = await input_values(page, curr_url)
+								# time.sleep(5)
+								# print('Entered input values!!')
 								print('submit button clicked!!')
 								await field_submit[0].click()
 								is_submit_success = not await is_same_page()
+							else:
+								sub_method = SUBMIT_METHODS.index(sub_method)+1
 
-						elif sub_method == 'enter_submit':
-								print('Pressed Enter!!')
-								await pup_page.keyboard.press('Enter')
-								is_submit_success = not await is_same_page()
+						if sub_method == 'enter_submit':
+							form, form_id = await input_values(page, curr_url)
+							time.sleep(5)
+							print('Entered input values!!')
+							print('Pressed Enter!!')
+							await pup_page.keyboard.press('Enter')
+							is_submit_success = not await is_same_page()
+							break
 					except Exception as se:
 						print(se)
 
@@ -621,6 +643,11 @@ async def crawl_web_page(phish_url, phish_id=-1):
 				except Exception as se:
 					logger.info('crawl_page_info(%s,%s): Exception -> Failed on saving processed screenshot; %s' %(str(count), curr_url, str(se)))
 
+				try:
+					print('Adding Page Info!!')
+					phish_db_layer.add_page_info(page)
+				except Exception as se:
+					print(se)
 
 				page_count = page_count+1			
 				page_requests = []
@@ -640,15 +667,13 @@ async def crawl_web_page(phish_url, phish_id=-1):
 async def main(url, phish_id):
 
 	try:
-		await asyncio.wait_for( crawl_web_page(url,phish_id), timeout = 600)
+		site_obj = phish_db_schema.Sites(site_url = url, phish_tank_ref_id = phish_id)
+		site_obj = phish_db_layer.add_site_info(site_obj)
+		print(site_obj)
+		await asyncio.wait_for( crawl_web_page(url, site_obj, phish_id), timeout = 600)
 	except asyncio.TimeoutError:
 		print('timeout')
-	# asyncio.get_event_loop().run_until_complete( crawl_web_page('https://semantic-ui.com/examples/login.html',7200899))
-		# 'http://pstofc-reschedule.com/royalmail/secure.php',7205566))
-	# https://paypal-ticketid671.com/users/userID-87141/season.php'))
-	# confirmc.php?cmd=_Restore_Startcount&_Acess_Tooken=l2FQLsPgVg8hnG2uR0VDdWMez6x39YsreeYjYu7f1hDW2a9rY7'))
-		# https://paypal-ticketid671.com/users/userID-87141/season.php'))
-		# 'https://semantic-ui.com/examples/login.html'))
+
 
 parser = argparse.ArgumentParser(description="Crawl phishing links")
 parser.add_argument('url', type=str, help= "URL to crawl")

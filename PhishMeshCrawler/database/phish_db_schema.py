@@ -122,7 +122,7 @@ class Sites(base):
   # target_site_id = Column(Integer, ForeignKey('tbl_TargetSites.target_site_id'))
   pages = relationship("Pages", backref='tbl_Sites')
   def __repr__(self):
-    return 'Sites  %d: "%s" %d' % (self.site_id, self.site_url, self.phish_tank_ref_id)
+    return 'Sites  %s: "%s" %s' % (self.site_id, self.site_url, self.phish_tank_ref_id)
 
 class Pages(base):
   __tablename__ ='tbl_Pages'

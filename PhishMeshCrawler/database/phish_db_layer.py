@@ -13,7 +13,7 @@ db = create_engine(DB_CONN_SERVER)
 # db.echo = True
 
 def create_db_session():
-  Session = sessionmaker(bind=db)
+  Session = sessionmaker(bind=db, expire_on_commit=False)
   return Session()
 
 def add_site_group_info(site_group_obj):
@@ -76,14 +76,22 @@ def get_an_image_per_group():
 def add_site_info(site_obj):
   try:
     session = create_db_session()
-    site =session.query(Sites).filter(text('phish_tank_ref_id='+str(site_obj.phish_tank_ref_id))).first()
+    site =session.query(Sites).filter(or_(text("phish_tank_ref_id='"+str(site_obj.phish_tank_ref_id+"'")), text("site_url='"+str(site_obj.site_url)+"'"))).first()
+    print('query', site)
     if site !=None:
       site_obj.site_id = site.site_id
-      session.merge(site_obj)
+      # session.merge(site_obj)
     else:  
-      session.add(site_obj)
+      if not site_obj.phish_tank_ref_id.isdigit():
+        site_obj.phish_tank_ref_id = None
+      # site = session.query(Sites).filter(text("site_url='"+str(site_obj.site_url)+"'")).first()
+      # if site_obj == None:
+      session.add(site_obj )
+      session.flush()
+      print(site_obj)
     session.commit()
     print('seesion committed')
+    return site_obj
     # session.close()
   except Exception as e:
     logger.info('Exception occured in add_site_info: '+str(e))

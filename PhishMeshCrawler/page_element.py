@@ -29,7 +29,7 @@ class Page_Element(object):
 			logger.info("get_category_value(): Count:" +str(len(self.categories)))
 			categories_count = { c: self.categories.count(c) for c in set(self.categories) if c!='unknown' and c!=""}
 			categories_count = sorted(categories_count, key= operator.itemgetter(1), reverse=True)
-			print('soted categories', categories_count)
+			# print('soted categories', categories_count)
 			for category,value,pt,pm in zip(self.categories,self.values, self.parsed_texts,self.parsed_methods):
 				logger.info("get_category_value(): Category: "+category+"; Value :"+str(value)+"; Parsed Text: "+pt+"; Parsed Method :"+pm)
 				if len(categories_count)>0 and category in categories_count[0] and len(category)>0 and category!='unknown' and (value!=None or value!='None'):

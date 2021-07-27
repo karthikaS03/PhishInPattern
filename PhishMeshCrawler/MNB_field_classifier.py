@@ -159,7 +159,7 @@ def classify(text):
 
 
 def get_category_input_value(category):
-    print(category)
+    # print(category)
     fake = Faker()
     # Faker.seed(0)
     choice ={'address' : fake.address(),

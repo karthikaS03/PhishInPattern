@@ -128,7 +128,7 @@ def docker_prune():
 
 def test():
     remove_containers()
-    initiate_container('https://buyelectronicsnyc.com/Alibab.htm','phishmesh_test4', 'crawl_page.py','0', 600 )   
+    # initiate_container('https://buyelectronicsnyc.com/Alibab.htm','phishmesh_test4', 'crawl_page.py','0', 600 )   
    
    
     

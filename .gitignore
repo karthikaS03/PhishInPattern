@@ -1,7 +1,7 @@
 # ignore all files in the following directory
 PhishMeshController/output_logs
+PhishMeshController/phish_containers_data
 PhishMeshController/sw_sec_containers_data
-
 data/
 *.pyc
 PhishMeshCrawler/phishtank_online_urls.json

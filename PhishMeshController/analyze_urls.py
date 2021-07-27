@@ -133,16 +133,17 @@ def fetch_from_file():
 			i = 0
 			for row in csvreader:
 				# print(row)
-				i +=1		
-				id = id_prefix + 'top_'+row['rank']+'_'+ str(i)
-				url = row['url']				
-				crawl_urls[id] = {'url':url, 'count':0}
+				if int(row['rank'])>0:
+					i +=1		
+					id = id_prefix + 'top_'+row['rank']+'_'+ str(i)
+					url = row['url']				
+					crawl_urls[id] = {'url':url, 'count':0}
 				
 	return crawl_urls
 
 def process_phishing_urls():	
 	while True:
-		phish_urls  =  fetch_from_file() #fetch_urls_from_db(max_containers) 
+		phish_urls  =  fetch_urls_from_db(max_containers) #fetch_from_file() #
 		processed_ids = process_urls_parallel(phish_urls, collection_script, container_timeout, max_containers)		
 		if len(client.containers.list())>30:
 			print('docker pruning started!!')

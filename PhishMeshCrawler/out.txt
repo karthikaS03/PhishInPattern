@@ -1,4 +1,0 @@
-https://www.walmart.com/account/login container_Phish_top_25_2
-query Sites  8958: "https://www.walmart.com/account/login" None
-seesion committed
-Sites  8958: "https://www.walmart.com/account/login" container_Phish_top_25_2

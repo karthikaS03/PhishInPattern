@@ -15,6 +15,11 @@ fi
 
 SUPERVISOR_PID=$!
 
+eval $(ssh-agent)
+ssh-add /github_key_phishmesh
+cd /home/pptruser/app
+git pull origin master
+
 function shutdown {
     echo "Trapped SIGTERM/SIGINT/x so shutting down supervisord..."
     kill -s SIGTERM ${SUPERVISOR_PID}

@@ -659,7 +659,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 			
 	finally:
 		await browser.close()
-		print('finally!!!')
+		print('Browser Closed!!!')
 		if not is_run_complete:
 			phish_db_layer.add_pages_to_site(phish_id,site_pages, phish_url)
 
@@ -668,7 +668,7 @@ async def main(url, phish_id):
 	try:
 		site_obj = phish_db_schema.Sites(site_url = url, phish_tank_ref_id = phish_id)
 		site_obj = phish_db_layer.add_site_info(site_obj)
-		print(site_obj)
+		# print(site_obj)
 		# Starts the crawling process with a execution timeout
 		await asyncio.wait_for( crawl_web_page(url, site_obj, phish_id), timeout = 600)
 	except asyncio.TimeoutError:

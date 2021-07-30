@@ -17,7 +17,7 @@ import tldextract
 import argparse
 
 dir_path = os.path.abspath(os.path.dirname(__file__))
-dir_path = dir_path +'/../data'
+dir_path = dir_path +'/../../data'
 
 logger = Phish_Logger.get_phish_logger('page_crawler.py')
 

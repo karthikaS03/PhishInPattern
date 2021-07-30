@@ -10,12 +10,12 @@ import sys
 sys.path.append('/home/sk-lab/Desktop/PhishProDetector/PhishMeshCrawler/')
 from database import phish_db_layer
 
-containers_path = '../PhishMeshController/phish_containers_data/'
+containers_path = '/Data/PhishMesh_Data/' #'../PhishMeshController/phish_containers_data/'
 sha_file_hashes = defaultdict(list)
-ssdeeep_file_hashes = defaultdict(list)
+ssdeep_file_hashes = defaultdict(list)
 
 def calculate_ssdeep_hash(file_path, file_name):
-	global ssdeeep_file_hashes
+	global ssdeep_file_hashes
 	file_hash = ssdeep.hash_from_file(file_path)
 	ssdeep_file_hashes[file_hash].append(file_name)
 
@@ -32,22 +32,26 @@ def calculate_sha_hash(file_path, file_name):
 
 def calculate_hashes():
 	global ssdeep_file_hashes, sha_file_hashes
-
+	file_count = 0
 	for d in os.listdir(containers_path):
+		if 'top' in d:
+			continue
 		try:
 			t = tarfile.open(containers_path+d+'/data.tar')
 			# print(t)
 			t.extractall()
 			file_dir_path = './data/resources/'+d.replace('container_','')
 			for f in os.listdir(file_dir_path):
+				file_count = file_count+1
 				calculate_sha_hash(file_dir_path+'/'+f,d+'_'+f )
-				calculate_ssdeep_hash
+				calculate_ssdeep_hash(file_dir_path+'/'+f,d+'_'+f )
 			rmtree('./data')
 			t.close()
 		except Exception as te:
 			print(te)
 
-	print('SSDeep Hashes Count ::', len(ssdeeep_file_hashes))
+	print('Total Files :: ', file_count)
+	print('SSDeep Hashes Count ::', len(ssdeep_file_hashes))
 	print('SHA Hashes Count ::', len(sha_file_hashes))
 
 	with open('../data/ssdeep_hashes.json','w') as f:

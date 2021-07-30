@@ -58,7 +58,7 @@ wget https://github.com/Yelp/dumb-init/releases/download/v1.2.1/dumb-init_1.2.1_
 dpkg -i dumb-init_*.deb && rm -f dumb-init_*.deb && \
 apt-get clean && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
 
-RUN apt update && apt install default-jre -y
+RUN apt update && apt install default-jre git-all -y
 
 # Set language to UTF8
 ENV LANG="C.UTF-8"
@@ -281,13 +281,33 @@ COPY docker_phishmesh_puppeteer/start-fluxbox.sh \
 
 USER root
 
-RUN chmod +x /opt/bin/start-fluxbox.sh
-RUN chmod +x /opt/bin/start-vnc.sh
+RUN sudo chmod +x /opt/bin/start-fluxbox.sh
+RUN sudo chmod +x /opt/bin/start-vnc.sh
 
 
-ADD PhishMeshCrawler /home/pptruser/app
 
-RUN chown -R pptruser:pptruser /home/pptruser/app
+
+COPY data/keys/github_key_phishmesh .
+#ADD PhishMeshCrawler /home/pptruser/app
+
+
+
+RUN chown -R pptruser:pptruser github_key_phishmesh
+
+RUN eval "$(ssh-agent -s)" \
+    && ssh-add github_key_phishmesh \
+    && ssh-keyscan -H github.com >> /etc/ssh/ssh_known_hosts \
+    && cd /home/pptruser/app && pwd \
+    && git init \ 
+    && git remote add -f origin git@github.com:karthikaS03/PhishMesh.git \
+    && git config core.sparsecheckout true \
+    && echo 'PhishMeshCrawler' >> .git/info/sparse-checkout \
+    && git pull origin master
+
+
+
+RUN chown -R pptruser:pptruser /home/pptruser/
+
 
 
 # Install python dependencies
@@ -311,4 +331,4 @@ EXPOSE 5900
 
 USER pptruser
 
-WORKDIR /home/pptruser/app
+WORKDIR /home/pptruser/app/PhishMeshCrawler

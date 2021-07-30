@@ -3,7 +3,7 @@ import os
 project_dir = os.getcwd()
 
 #Docker
-docker_image = 'phishmesh_puppeteer:ver1'
+docker_image = 'phishmesh_puppeteer:test6'
 docker_user = 'pptruser'
 docker_container_home = '/home/pptruser/'
 docker_shared_dir_root = project_dir

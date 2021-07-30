@@ -29,7 +29,7 @@ def initiate_container(url, id, script_name, iteration_count,  container_timeout
         ## create and setup container ##
         get_logger('container_'+id, 1).info(get_time() + 'container_'+id+' creating!!')
         container_id  = client.containers.create(image=docker_image,name='container_'+id,volumes = vols,
-                                                shm_size='1G', user=docker_user, 
+                                                shm_size='1G', user=docker_user, network='phishpro-network',
                                                 publish_all_ports=True, detach=False)
         container = client.containers.get('container_'+str(id))
         container.start()
@@ -127,8 +127,8 @@ def docker_prune():
 
 
 def test():
-    remove_containers()
-    # initiate_container('https://buyelectronicsnyc.com/Alibab.htm','phishmesh_test4', 'crawl_page.py','0', 600 )   
+    # remove_containers()
+    initiate_container('https://buyelectronicsnyc.com/Alibab.htm','phishmesh_test7', 'crawl_page.py','0', 600 )   
    
    
     

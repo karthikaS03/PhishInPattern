@@ -371,15 +371,15 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 		###
 
 		res_name = (res.url.split('?')[0]).split('/')[-1]
-		res_name = res_name if len(res_name)>1: else 'res_'+str(site_obj.site_id) + '_'+res_count
+		res_name = res_name if len(res_name)>1 else 'res_' + str(site_obj.site_id) + '_' + res_count
 		res_count = res_count + 1
-		dpath = dir_path+'/resources/'+str(count)		
+		dpath = dir_path + '/resources/' + str(count)		
 		digest = ''
 
 		if not os.path.exists(dpath):
 			os.makedirs(dpath)
 		
-		file_path= dpath+"/"+ res_name 
+		file_path = dpath + "/" + res_name 
 		try:
 		
 			# Get response content and store it in a file
@@ -400,7 +400,6 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 		rsp_info = phish_db_schema.Page_Response_Info(response_url = res.url, response_file_path = file_path, response_file_hash = digest)
 		# phish_db_layer.add_page_rsp_info(rsp_info)
 		page_responses.append(rsp_info)
-
 
 	async def get_field(field_selector, frameIndex):
 		try:

@@ -3,16 +3,20 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 import json
 import datetime
+import os
+import sys
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(parentdir)
+from config.phish_db_config import *
 
 
 if __name__ == '__main__':
 
-  import phish_db_config
-  DB_CONN_SERVER = phish_db_config.DB_CONN_SERVER
+  # DB_CONN_SERVER = DB_CONN_SERVER
 
   db = create_engine(DB_CONN_SERVER)
   db.echo = True
-
 
   metadata = MetaData(db)
   base = declarative_base()
@@ -39,7 +43,7 @@ if __name__ == '__main__':
   session.flush()
   session.commit()
 else:
-  from .phish_db_config import *
+  from config.phish_db_config import *
     
   db = create_engine(DB_CONN_SERVER)
   db.echo = True

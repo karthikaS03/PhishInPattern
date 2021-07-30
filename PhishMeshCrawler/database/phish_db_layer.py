@@ -3,8 +3,15 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from .phish_logger import Phish_Logger
 from .phish_db_schema import *
-from .phish_db_config import *
-
+import os
+import sys
+currentdir = os.path.dirname(os.path.realpath(__file__))
+print(currentdir)
+parentdir = os.path.dirname(currentdir)
+print(parentdir)
+sys.path.append(parentdir)
+from config.phish_db_config import *
+# from .phish_db_config import *
 
 logger = Phish_Logger.get_phish_logger('phish_db_layer.py')
 

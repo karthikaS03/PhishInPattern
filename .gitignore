@@ -1,11 +1,13 @@
 # ignore all files in the following directory
 PhishMeshController/output_logs
+PhishMeshController/config
 PhishMeshController/phish_containers_data
 PhishMeshController/sw_sec_containers_data
 data/
 *.pyc
 PhishMeshCrawler/phishtank_online_urls.json
 PhishMeshCrawler/phishtankdetails
+PhishMeshCrawler/config
 PhishMeshCrawler/database/phish_db_config.py
 
 

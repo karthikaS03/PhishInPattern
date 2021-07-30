@@ -3,11 +3,10 @@ import os
 project_dir = os.getcwd()
 
 #Docker
-docker_image = 'phishmesh_puppeteer:test6'
+docker_image = 'phishmesh_puppeteer:test'
 docker_user = 'pptruser'
 docker_container_home = '/home/pptruser/'
-docker_shared_dir_root = project_dir
-vols ={}#{ docker_shared_dir_root + '/app' :{'bind':docker_container_home + 'app','mode':'rw'}}
+vols ={ project_dir + '/config' :{'bind':docker_container_home + 'app/PhishMeshCrawler/config','mode':'ro'}}
 ''', 
 	docker_shared_dir_root + '/logs'          :{'bind':docker_container_home + 'logs','mode':'rw'},
 	        docker_shared_dir_root + '/screenshots'   :{'bind':docker_container_home + 'screenshots','mode':'rw'},

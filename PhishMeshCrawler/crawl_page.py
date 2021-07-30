@@ -482,12 +482,16 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 			try:
 
 				### Saving screenshot of the current page before interaction
-				path=dir_path+'/images/'+str(count)		
+				path=dir_path+'/images/'+str(count)	
 				if not os.path.exists(path):
 					os.makedirs(path)
+				if not os.path.exists(path+"/slices"):
+					os.makedirs(path+"/slices")
 				path= path+"/"+str(count)+'_'+str(page_count)+'_screenshot.png';
+				path_slice = path+"/slices/"+str(count)+'_'+str(page_count)+'_screenshot.png';
 				try:
 					await pup_page.screenshot({'path': path, 'fullPage':True})
+					await pup_page.screenshot({'path': path_slice, 'fullPage':True})
 				except Exception as e:
 					print(e)
 
@@ -546,7 +550,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 				form_id = None
 				
 				### Parse and Categorize each elements in the page
-				page = parse_elements(res,path,page)
+				page = parse_elements(res,path_slice,page)
 				is_submit_success = False
 
 				

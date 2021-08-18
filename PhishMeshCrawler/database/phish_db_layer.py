@@ -6,9 +6,7 @@ from .phish_db_schema import *
 import os
 import sys
 currentdir = os.path.dirname(os.path.realpath(__file__))
-print(currentdir)
 parentdir = os.path.dirname(currentdir)
-print(parentdir)
 sys.path.append(parentdir)
 from config.phish_db_config import *
 # from .phish_db_config import *
@@ -203,7 +201,9 @@ def add_pages_to_site(phish_tank_ref_id, site_pages, surl):
   # print(site_pages)
   try:
     session = create_db_session()
-    site = session.query(Sites).filter(text('phish_tank_ref_id='+str(phish_tank_ref_id))).first()
+    site = None
+    if str(phish_tank_ref_id).isdigit():
+      site = session.query(Sites).filter(text('phish_tank_ref_id='+str(phish_tank_ref_id))).first()
     if site == None:
       site = session.query(Sites).filter(text("site_url='"+str(surl)+"'")).first()
       if site == None:
@@ -240,6 +240,18 @@ def fetch_field_training_set():
     return training_set
   except Exception as e:
     logger.info('Exception occured in fetch_field_training_set: '+str(e))
+
+
+def fetch_requested_resources():
+  try:
+    conn = db.connect()
+    query = text('SELECT * FROM requested_resources')
+    result = conn.execute(query)
+    return result.fetchall()
+  except Exception as e:
+    print(e)
+    # logger.info('Exception occured in fetch_requested_resources'+ str(e))
+
 
 def fetch_phishtank_urls(count=100):
   try:

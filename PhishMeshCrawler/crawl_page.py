@@ -331,14 +331,21 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 	page_requests = []
 	page_responses = []
 
-	async def is_same_page():
+	async def is_navigate_success():
 		try:
-			time.sleep(5)
-			dom_tree= await pup_page.evaluate(js_elements_tree)
-			print('Is Same Page ::' , temp==dom_tree)
-			return temp == dom_tree
+			# time.sleep(5)
+			try:
+				await pup_page.waitForNavigation({'timeout':10000})
+			except Exception as ex:
+				print('navigation timeout!!!')
+			dom_tree= await pup_page.evaluate(js_elements_tree) 			
+			print('is_navigate_success ::' , temp!=dom_tree)
+
+			## Check if the page is naviagted to a page with different content
+			return  temp != dom_tree 
 		except Exception as e:
-			print('is_same_page :: Exception ',e)
+			print('is_navigate_success :: Exception ',e)
+
 
 	async def clear_overlays():
 		field_buttons = await pup_page.JJ('button')
@@ -362,17 +369,19 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 		req_info = phish_db_schema.Page_Request_Info(request_url = req_url, request_domain = req_domain, request_method = req.method, request_type = req.resourceType)
 		# phish_db_layer.add_page_req_info(req_info)
 		page_requests.append(req_info)
+		# print(req)
+		# print(req._requestId)
 
 		await req.continue_()
 
-	async def handle_response(res):
+	async def handle_response(res ):
 		###
 		### Fetch Responses, Store them and their hash in database 
 		###
-
+		
 		res_name = (res.url.split('?')[0]).split('/')[-1]
-		res_name = res_name if len(res_name)>1 else 'res_' + str(site_obj.site_id) + '_' + res_count
-		res_count = res_count + 1
+		res_name = res_name if len(res_name)>1 else 'res_' + str(site_obj.site_id) + '_' + res.request._requestId
+		# res_count = res_count + 1
 		dpath = dir_path + '/resources/' + str(count)		
 		digest = ''
 
@@ -487,8 +496,9 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 					os.makedirs(path)
 				if not os.path.exists(path+"/slices"):
 					os.makedirs(path+"/slices")
-				path= path+"/"+str(count)+'_'+str(page_count)+'_screenshot.png';
 				path_slice = path+"/slices/"+str(count)+'_'+str(page_count)+'_screenshot.png';
+				path= path+"/"+str(count)+'_'+str(page_count)+'_screenshot.png';
+				
 				try:
 					await pup_page.screenshot({'path': path, 'fullPage':True})
 					await pup_page.screenshot({'path': path_slice, 'fullPage':True})
@@ -519,7 +529,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 				### Stop execution when page navigated to a different domain
 				if org_url.domain != page_url.domain :
 					logger.info('crawl_page_info(%s,%s):  Navigated to different domain!!'%(str(count), curr_url))
-					phish_db_layer.add_pages_to_site(phish_id, site_pages, phish_url)
+					phish_db_layer.add_pages_to_site(site_obj.phish_tank_ref_id, site_pages, phish_url)
 					is_run_complete = True
 					return;
 				time.sleep(5)
@@ -535,7 +545,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 
 				### If the same page was visited 3 times, then stop execution  		
 				if samePage >= 3:
-					phish_db_layer.add_pages_to_site(phish_id, site_pages, phish_url)
+					phish_db_layer.add_pages_to_site(site_obj.phish_tank_ref_id, site_pages, phish_url)
 					logger.info('crawl_page_info(%s,%s): Page repeated for few times!! ' %(str(count), curr_url))					
 					is_run_complete = True
 					return;
@@ -554,7 +564,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 				is_submit_success = False
 
 				
-				SUBMIT_METHODS = [ 'form_name', 'form_id', 'submit_button','button', 'enter_submit' ]
+				SUBMIT_METHODS = [ 'form_name', 'form_id', 'submit_button','button', 'enter_submit', 'gremlin_clicks' ]
 
 				### Try submitting via multiple methods
 				for sub_method in SUBMIT_METHODS:
@@ -578,7 +588,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 									try:					
 										print('Button clicked')
 										await field_btn.click()   
-										is_submit_success = not await is_same_page()
+										is_submit_success =  await is_navigate_success()
 										if is_submit_success:
 											break
 									except Exception as fe:
@@ -594,7 +604,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 							if len(field_submit)>0:								
 								print('form submitted by name')
 								await pup_page.Jeval('form[name="'+form+'"]', "(fm) =>{fm.submit();}") 									
-								is_submit_success = not await is_same_page()
+								is_submit_success =  await is_navigate_success()
 							else:
 								sub_method = SUBMIT_METHODS.index(sub_method)+1
 
@@ -606,7 +616,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 								# print('Entered input values!!')
 								print('form submitted by id')
 								await pup_page.Jeval('form[id="'+form_id+'"]', "(fm) =>{fm.submit();}") 
-								is_submit_success = not await is_same_page()
+								is_submit_success =  await is_navigate_success()
 							else:
 								sub_method = SUBMIT_METHODS.index(sub_method)+1
 
@@ -618,18 +628,32 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 								# print('Entered input values!!')
 								print('submit button clicked!!')
 								await field_submit[0].click()
-								is_submit_success = not await is_same_page()
+								is_submit_success =  await is_navigate_success()
 							else:
 								sub_method = SUBMIT_METHODS.index(sub_method)+1
 
-						if sub_method == 'enter_submit':
-							form, form_id = await input_values(page, curr_url)
-							time.sleep(5)
-							print('Entered input values!!')
+						if sub_method == 'enter_submit':							
+							time.sleep(5)							
 							print('Pressed Enter!!')
 							await pup_page.keyboard.press('Enter')
-							is_submit_success = not await is_same_page()
+							is_submit_success =  await is_navigate_success()
+							
+
+						if sub_method == 'gremlin_clicks':
+							await pup_page.addScriptTag({'url': 'https://unpkg.com/gremlins.js' })
+							# console.log('Script injected @ '+new Date(Date.now()).toLocaleString())
+							# await pup_page.Jeval('form[id="'+form_id+'"]', "(fm) =>{fm.submit();}") 
+							await pup_page.evaluate("""() => { gremlins.createHorde({
+								species: [gremlins.species.clicker(),gremlins.species.toucher(),
+											gremlins.species.scroller()],
+								mogwais: [gremlins.mogwais.alert(),gremlins.mogwais.fps(),gremlins.mogwais.gizmo()],								
+								strategies: [gremlins.strategies.allTogether({delay: 200, nb: 100 })]
+							}).unleash() }"""
+							)
+							time.sleep(5)
+							is_submit_success =  await is_navigate_success()
 							break
+
 					except Exception as se:
 						print(se)
 
@@ -664,7 +688,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 		await browser.close()
 		print('Browser Closed!!!')
 		if not is_run_complete:
-			phish_db_layer.add_pages_to_site(phish_id,site_pages, phish_url)
+			phish_db_layer.add_pages_to_site(site_obj.phish_tank_ref_id ,site_pages, phish_url)
 
 async def main(url, phish_id):
 

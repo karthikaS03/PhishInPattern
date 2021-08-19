@@ -81,7 +81,7 @@ def get_an_image_per_group():
 def add_site_info(site_obj):
   try:
     session = create_db_session()
-    site =session.query(Sites).filter(or_(text("phish_tank_ref_id='"+str(site_obj.phish_tank_ref_id+"'")), text("site_url='"+str(site_obj.site_url)+"'"))).first()
+    site =session.query(Sites).filter(or_(text("phish_tank_ref_id='"+str(site_obj.phish_tank_ref_id)+"'"), text("site_url='"+str(site_obj.site_url)+"'"))).first()
     print('query', site)
     if site !=None:
       site_obj.site_id = site.site_id

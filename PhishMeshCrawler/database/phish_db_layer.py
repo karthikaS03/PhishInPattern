@@ -81,17 +81,17 @@ def get_an_image_per_group():
 def add_site_info(site_obj):
   try:
     session = create_db_session()
-    site =session.query(Sites).filter(or_(text("phish_tank_ref_id='"+str(site_obj.phish_tank_ref_id+"'")), text("site_url='"+str(site_obj.site_url)+"'"))).first()
+    site =session.query(Sites).filter(or_(text("phish_tank_ref_id='"+str(site_obj.phish_tank_ref_id)+"'"), text("site_url='"+str(site_obj.site_url)+"'"))).first()
     print('query', site)
     if site !=None:
       site_obj.site_id = site.site_id
       # session.merge(site_obj)
     else:  
-      if not site_obj.phish_tank_ref_id.isdigit():
+      if not str(site_obj.phish_tank_ref_id).isdigit():
         site_obj.phish_tank_ref_id = None
       # site = session.query(Sites).filter(text("site_url='"+str(site_obj.site_url)+"'")).first()
       # if site_obj == None:
-      session.add(site_obj )
+      session.add(site_obj)
       session.flush()
       print(site_obj)
     session.commit()
@@ -99,6 +99,7 @@ def add_site_info(site_obj):
     return site_obj
     # session.close()
   except Exception as e:
+    
     logger.info('Exception occured in add_site_info: '+str(e))
 
 

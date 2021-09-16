@@ -111,6 +111,7 @@ def add_page_info(page_obj):
     # print('seesion committed')
     session.close()
   except Exception as e:
+    print(e)
     logger.info('Exception occured in add_page_info: '+str(e))
 
 
@@ -136,6 +137,19 @@ def add_phish_tank_link(phish_tank_link_obj):
     session.close()
   except Exception as e:
     logger.info('Exception occured in add_phish_tank_link: '+str(e))
+
+def add_open_phish_link(open_phish_links_obj):
+  try:
+    session = create_db_session()
+    link =session.query(Open_Phish_Links).filter(text('open_phish_url='+str(open_phish_links_obj.open_phish_url))).first()
+    if link !=None:
+      session.merge(open_phish_links_obj)
+    else:
+      session.add(open_phish_links_obj)
+    session.commit()
+    session.close()
+  except Exception as e:
+    logger.info('Exception occured in add_open_phish_link: '+str(e))
 
 def add_domain_info(domain_obj):
   try:
@@ -253,6 +267,14 @@ def fetch_requested_resources():
     print(e)
     # logger.info('Exception occured in fetch_requested_resources'+ str(e))
 
+def fetch_unknown_pages():
+  try:
+    conn = db.connect()
+    query = text('SELECT * FROM get_pages_with_unknown_elements')
+    result = conn.execute(query)
+    return result.fetchall()
+  except Exception as e:
+    print(e)
 
 def fetch_phishtank_urls(count=100):
   try:
@@ -267,12 +289,27 @@ def fetch_phishtank_urls(count=100):
     return phish_urls
   except Exception as e:
     print(e)
-    logger.info('Exception occured in fetch_field_training_set: '+str(e))
+    logger.info('Exception occured in fetch_phishtank_urls: '+str(e))
+
+def fetch_openphish_urls(count=100):
+  try:
+    session = create_db_session()
+    phish_urls = []
+    for s in session.query(Open_Phish_Links).filter(and_(Open_Phish_Links.is_analyzed==None,Open_Phish_Links.status=='Online')).limit(count).all():
+      a = Open_Phish_Links(open_phish_link_id = s.open_phish_link_id, open_phish_url = s.open_phish_url)
+      # print(a)
+      phish_urls.append(a)
+    session.commit()
+    session.close()
+    return phish_urls
+  except Exception as e:
+    print(e)
+    logger.info('Exception occured in fetch_openphish_urls: '+str(e))
 
 def get_site_id(phish_id):
   try:
     session = create_db_session()
-    site_id = session.query(Site).filter(phish_tank_ref_id==phish_id).first()
+    site_id = session.query(Sites).filter(Sites.phish_tank_ref_id==phish_id).first()
     if site_id[0] ==None:
       session.commit()
       return 0

@@ -40,7 +40,7 @@ def initiate_container(url, id, script_name, iteration_count,  container_timeout
         ## Exeecute the browser automation script
         execute_script(url, id, script_name,  iteration_count, container_timeout-100)
     except Exception as e:
-        # print(e)
+        print(e)
         get_logger('container_'+id).info(e) 
 
 def execute_script(url, id, script_name,  iteration_count, container_timeout):
@@ -72,6 +72,8 @@ def stop_container(id):
             container.pause()
             time.sleep(2)
             container.stop()
+            time.sleep(1)
+            container.remove()
     except Exception as e:
         get_logger('container_'+id).info(e)
 
@@ -113,8 +115,10 @@ def export_container_logs(id,count):
                 f.write(chunk)
 
     except Exception as e:
+        print(e)
         get_logger('container_'+id).info('Export Container:: Exception!!')
         get_logger('container_'+id).info(e)
+        
     
 
 
@@ -128,7 +132,7 @@ def docker_prune():
 
 def test():
     # remove_containers()
-    initiate_container('https://semantic-ui.com/examples/login.html','phishmesh_testd3', 'crawl_page.py','0', 600 )   
+    initiate_container('https://semantic-ui.com/examples/login.html','phishmesh_teste3', 'crawl_page.py','0', 600 )   
    
    
     

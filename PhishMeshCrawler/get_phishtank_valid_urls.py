@@ -1,3 +1,4 @@
+from datetime import datetime
 import requests
 import json
 from database import phish_db_schema
@@ -5,6 +6,7 @@ from database import phish_db_layer
 from dateutil import parser
 import tldextract
 import time
+
 
 def is_url_online(url):
 	try:
@@ -23,6 +25,8 @@ def get_phishtank_urls():
 		phishtank_urls = r.json()
 		with open('phishtank_online_urls.json', 'w') as f:
 			json.dump(phishtank_urls,f, indent=4)
+	time.sleep(5)
+	record_phishtank_url_details()
 
 def record_phishtank_url_details():
 	
@@ -45,8 +49,37 @@ def record_phishtank_url_details():
 			# break;
 		except:
 			continue
+
+def get_openphish_urls():
+	api_url = 'https://openphish.com/feed.txt'
+	r = requests.get(api_url)
+	links = r.text
+	with open('../data/openphish_links.csv', 'w') as f:
+		f.write('url\n'+links)
+	with open('../data/open_phish_feeds/openphish_links_'+str(datetime.datetime().now())+'.csv', 'w') as f:
+		f.write('url\n'+links)
+	time.sleep(5)
+	record_openphish_url_details()
+
+def record_openphish_url_details():
+	import csv
+
+	with open('../data/openphish_links.csv','r') as cf:			
+		csvreader = csv.DictReader(cf, delimiter=',')
+		i = 1502
+		for row in csvreader:		
+			try:						
+				status = is_url_online(row['url'])
+				domain = '.'.join(tldextract.extract(row['url'])[1:])
+				link = phish_db_schema.Open_Phish_Links( open_phish_url= row['url'] , status = status )
+				phish_db_layer.add_open_phish_link(link)				
+			except:
+				continue
+
 while True:
+
 	get_phishtank_urls()
-	time.sleep(10)
-	record_phishtank_url_details()
+	for i in range(0,5,3600):		
+		get_openphish_urls()
+		time.sleep(5)
 	time.sleep(3600)

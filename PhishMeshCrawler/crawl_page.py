@@ -318,14 +318,29 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 		### Intercept Page Requests and log them
 		###
 
-		req_url = req.url
-		req_domain =  '.'.join(tldextract.extract(req_url)[1:]) 
-		req_info = phish_db_schema.Page_Request_Info(request_url = req_url, request_domain = req_domain, request_method = req.method, request_type = req.resourceType)
-		# phish_db_layer.add_page_req_info(req_info)
-		page_requests.append(req_info)
-		# print(req)
-		# print(req._requestId)
+		def log_request_details(rq):
+			req_url = rq.url
+			req_domain =  '.'.join(tldextract.extract(req_url)[1:]) 
+			req_info = phish_db_schema.Page_Request_Info(request_url = req_url, 
+														request_domain = req_domain, 
+														request_method = rq.method, 
+														request_type = rq.resourceType
+														,req_id = rq._requestId,
+														post_data = rq.postData[:1990] if rq.postData !=None else rq.postData,
+														headers = str(rq.headers)[:10000] if rq.headers !=None else rq.headers
+														)
 
+		
+			# phish_db_layer.add_page_req_info(req_info)
+			print(rq.postData)
+			page_requests.append(req_info)
+		
+		log_request_details(req)
+		
+		### log details of requests involved in the redirections
+		for r in req.redirectChain:
+			log_request_details(r)
+		
 		await req.continue_()
 
 	async def handle_response(res ):
@@ -360,7 +375,12 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 		except Exception as e:
 			logger.info('handle_response: Exception!! ::'+res.url+' :: '+str(e))
 
-		rsp_info = phish_db_schema.Page_Response_Info(response_url = res.url, response_file_path = file_path, response_file_hash = digest)
+		rsp_info = phish_db_schema.Page_Response_Info(	response_url = res.url, 
+														response_file_path = file_path, 
+														response_file_hash = digest,
+														response_status = str(res.status),
+														response_headers = str(res.headers)[:10000] if res.headers !=None else res.headers
+													)
 		# phish_db_layer.add_page_rsp_info(rsp_info)
 		page_responses.append(rsp_info)
 

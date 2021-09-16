@@ -8,7 +8,7 @@ import os
 import json 
 import sys
 import csv 
-
+sys.path.append('/home/sk-lab/Desktop/PhishProDetector/PhishMeshCrawler/')
 from database import phish_db_layer
 from docker_config import *
 from docker_monitor import *
@@ -124,38 +124,57 @@ def fetch_urls_from_db(count=0):
 
 
 def fetch_from_file():
-	urls_path = '../data/alexa_urls_login.csv'
+	urls_path = '../data/openphish_links.csv'  # '../data/phishing_dumps/csv/12092021.csv'
 
 	crawl_urls = {}
 	if '.csv' in urls_path:		
 		with open(urls_path) as cf:
 			csvreader = csv.DictReader(cf, delimiter=',')
-			i = 0
+			i = 1502
 			for row in csvreader:
 				# print(row)
-				if int(row['rank'])>0:
+				if 'openphish' in urls_path:
+					i += 1
+					print(row['url'])
+					# t_date = urls_path.split('/')[-1].replace('.csv','')
+					id = id_prefix +  'openphish' +'_'+ str(i)
+					url = row['url']				
+					crawl_urls[id] = {'url':url, 'count':0}
+
+				elif 'rank' not in row:
+					# if i<737:
+					# 	i +=1
+					# 	continue
+					i += 1
+					t_date = urls_path.split('/')[-1].replace('.csv','')
+					id = id_prefix +  'palo_' + str(t_date)+'_'+ str(i)
+					url = row['url']				
+					crawl_urls[id] = {'url':url, 'count':0}
+
+				elif  int(row['rank'])>0:
 					i +=1		
 					id = id_prefix + 'top_'+row['rank']+'_'+ str(i)
 					url = row['url']				
 					crawl_urls[id] = {'url':url, 'count':0}
-				
+								
 	return crawl_urls
 
 def process_phishing_urls():	
 	while True:
-		phish_urls  =  fetch_urls_from_db(max_containers) #fetch_from_file() #
+		phish_urls  =   fetch_from_file() #fetch_urls_from_db(max_containers) #fetch_from_file() #
 		processed_ids = process_urls_parallel(phish_urls, collection_script, container_timeout, max_containers)		
 		if len(client.containers.list())>30:
 			print('docker pruning started!!')
 			docker_prune()
+		break
 
 		
 def main():
-	# stop_running_containers()
+	stop_running_containers()
 	'''
 	prune unused removed containers
 	'''
-	# docker_prune()
+	docker_prune()
 	set_config()
 	print('PhishMeshController :: Started Crawling Phish URLs...' )
 	process_phishing_urls()

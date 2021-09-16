@@ -24,7 +24,7 @@ ANALYSIS_TIMEOUT = 600  # 900 ->15 mins
 CONFIG_EXPORT_PATH = './containers_data/'
 
 CRAWL_URL_PATH = '../SWSec_Data/high_deny_score_sites.csv' #'../SWSec_Data/navigatorserviceworkerregister.csv'
-ANALYSIS_URL_PATH = './data/filtered_sw_urls.csv'
+ANALYSIS_URL_PATH = '../data/phish.csv'
 
 ###
 # To be changed as needed

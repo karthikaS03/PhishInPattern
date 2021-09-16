@@ -107,6 +107,18 @@ class Phish_Tank_Links(base):
   def __repr__(self):
     return 'Phishtank Links  %d: "%s" %s' % (self.phish_tank_ref_id, self.phish_tank_url,self.status)
 
+class Open_Phish_Links(base):
+  __tablename__ ='tbl_OpenPhishLinks'
+  open_phish_link_id = Column(Integer, primary_key = True)
+  open_phish_url = Column(String(1000))
+  recorded_datetime = Column(DateTime, default=datetime.datetime.now())
+  status = Column(String(100))
+  is_analyzed= Column(Boolean)
+ 
+  def __repr__(self):
+    return 'Phishtank Links  %d: "%s" %s' % (self.open_phish_link_id, self.open_phish_url,self.status)
+
+
 class Site_Images(base):
   __tablename__ ='tbl_SiteImages'
   site_image_id = Column(Integer, primary_key = True)
@@ -220,6 +232,10 @@ class Page_Request_Info(base):
   request_domain = Column(String(100))
   request_method = Column(String(10))
   request_type = Column(String(15))
+  req_id = Column(String(100))
+  post_data = Column(String(2000))
+  headers = Column(String(10000))
+  request_time = Column(TIMESTAMP, default=datetime.datetime.now())
   page_id = Column(Integer, ForeignKey('tbl_Pages.page_id'))
   def __repr__(self):
     return 'Page_Request_Info %d : %s' %(self.request_id, self.request_url)
@@ -232,6 +248,9 @@ class Page_Response_Info(base):
   response_url = Column(String(3000))
   response_file_path = Column(String(500))
   response_file_hash = Column(String(50))
+  response_headers = Column(String(10000))
+  response_status = Column(String(10))
+  response_time = Column(TIMESTAMP, default=datetime.datetime.now())
   page_id = Column(Integer, ForeignKey('tbl_Pages.page_id'))
   def __repr__(self):
     return 'Page_Response_Info %d : %s' %(self.response_id, self.response_url)

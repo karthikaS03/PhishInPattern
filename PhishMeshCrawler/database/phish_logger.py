@@ -1,6 +1,7 @@
 import logging
 import os
 import datetime
+currentdir = os.path.dirname(os.path.realpath(__file__))
 
 class Phish_Logger:
 	@staticmethod
@@ -8,7 +9,7 @@ class Phish_Logger:
 		logger = logging.getLogger(name)
 		logger.setLevel(logging.INFO)
 		dir_path = os.path.abspath(os.path.dirname(__file__))
-		handler = logging.FileHandler(os.path.join(dir_path+'/../../../data/db_logs/','phish_logger_'+str(datetime.datetime.now().date())+'.log'))
+		handler = logging.FileHandler(os.path.join(currentdir+'/../../data/db_logs/','phish_logger_'+str(datetime.datetime.now().date())+'.log'))
 		handler.setLevel(logging.INFO)
 
 		# create a logging format

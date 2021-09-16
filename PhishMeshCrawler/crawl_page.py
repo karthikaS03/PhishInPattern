@@ -139,7 +139,7 @@ def parse_elements(res,path,page):
 							element = add_InnerText(element)                
 							flag=True if len(element.categories[-1])>1 else False        
 				if r["placeholder"]!='null' and flag!=True:      
-					flag=True;
+					flag=True
 					element.parsed_texts.append(r["placeholder"])
 					element.parsed_methods.append("placeholder")
 					element = add_InnerText(element)
@@ -164,9 +164,8 @@ def parse_elements(res,path,page):
 	return page
 
 def get_frame(frameIndex, pup_page):
-	if frameIndex == -1:
-		frame = pup_page
-	else:
+	frame = pup_page
+	if frameIndex != -1 and pup_page.frames!=None:
 		frame = pup_page.frames[frameIndex+1]
 	return frame
 
@@ -187,7 +186,7 @@ async def reset_element(element, page, field_selector):
 			# await page.keyboard.press('Backspace');
 			# await page.keyboard.press('Enter')
 	except Exception as e:
-		print('Reset Element!!', e)
+		# print('Reset Element!!', e)
 		logger.info('reset_element(): Exception!!') 
 
 async def crawl_web_page(phish_url,site_obj, phish_id=-1):
@@ -256,72 +255,14 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 					  title  = document.title;
 					  return title;
 					  }"""
-	js_mouse_pointer = """() => {
-    // Install mouse helper only for top-level frame.
-    if (window !== window.parent)
-      return;
-    window.addEventListener('DOMContentLoaded', () => {
-      const box = document.createElement('puppeteer-mouse-pointer');
-      const styleElement = document.createElement('style');
-      styleElement.innerHTML = `
-        puppeteer-mouse-pointer {
-          pointer-events: none;
-          position: absolute;
-          top: 0;
-          z-index: 10000;
-          left: 0;
-          width: 20px;
-          height: 20px;
-          background: rgba(0,0,0,.4);
-          border: 1px solid white;
-          border-radius: 10px;
-          margin: -10px 0 0 -10px;
-          padding: 0;
-          transition: background .2s, border-radius .2s, border-color .2s;
-        }
-        puppeteer-mouse-pointer.button-1 {
-          transition: none;
-          background: rgba(0,0,0,0.9);
-        }
-        puppeteer-mouse-pointer.button-2 {
-          transition: none;
-          border-color: rgba(0,0,255,0.9);
-        }
-        puppeteer-mouse-pointer.button-3 {
-          transition: none;
-          border-radius: 4px;
-        }
-        puppeteer-mouse-pointer.button-4 {
-          transition: none;
-          border-color: rgba(255,0,0,0.9);
-        }
-        puppeteer-mouse-pointer.button-5 {
-          transition: none;
-          border-color: rgba(0,255,0,0.9);
-        }
-      `;
-      document.head.appendChild(styleElement);
-      document.body.appendChild(box);
-      document.addEventListener('mousemove', event => {
-        box.style.left = event.pageX + 'px';
-        box.style.top = event.pageY + 'px';
-        updateButtons(event.buttons);
-      }, true);
-      document.addEventListener('mousedown', event => {
-        updateButtons(event.buttons);
-        box.classList.add('button-' + event.which);
-      }, true);
-      document.addEventListener('mouseup', event => {
-        updateButtons(event.buttons);
-        box.classList.remove('button-' + event.which);
-      }, true);
-      function updateButtons(buttons) {
-        for (let i = 0; i < 5; i++)
-          box.classList.toggle('button-' + i, buttons & (1 << i));
-      }
-    }, false);
-  }
-	"""
+
+
+	js_override_window_open ="""function w_override(window, open) {
+													window.open = (url) => {
+													open.call(window, url, '_self')
+													}
+								}"""
+
 	temp = None 
 	samePage = 0
 	count=phish_id
@@ -348,30 +289,58 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 
 
 	async def clear_overlays():
+
 		field_buttons = await pup_page.JJ('button')
 
+		### Click any popup buttons
 		for field_btn in field_buttons:
-			print('Button clicked')
-			print((await field_btn.getProperty('name')).toString()  )
+			
 			if await field_btn.isIntersectingViewport():
 				try:				
 					await field_btn.click()   
 				except Exception as fe:
 					print(fe)
 
+		## Generate random clicks to dispose alerts and popup boxes
+		await pup_page.evaluate("""() => { gremlins.createHorde({
+								species: [gremlins.species.clicker({clickTypes:['click', 'dblclick']})],
+											
+								mogwais: [gremlins.mogwais.alert(),gremlins.mogwais.fps(),gremlins.mogwais.gizmo()],								
+								strategies: [gremlins.strategies.bySpecies({delay: 500, nb: 50 })]
+							}).unleash() }"""
+							)
+		time.sleep(10)
+
+		
+
 	async def handle_request(req):
 		###
 		### Intercept Page Requests and log them
 		###
 
-		req_url = req.url
-		req_domain =  '.'.join(tldextract.extract(req_url)[1:]) 
-		req_info = phish_db_schema.Page_Request_Info(request_url = req_url, request_domain = req_domain, request_method = req.method, request_type = req.resourceType)
-		# phish_db_layer.add_page_req_info(req_info)
-		page_requests.append(req_info)
-		# print(req)
-		# print(req._requestId)
+		def log_request_details(rq):
+			req_url = rq.url
+			req_domain =  '.'.join(tldextract.extract(req_url)[1:]) 
+			req_info = phish_db_schema.Page_Request_Info(request_url = req_url, 
+														request_domain = req_domain, 
+														request_method = rq.method, 
+														request_type = rq.resourceType
+														,req_id = rq._requestId,
+														post_data = rq.postData[:1990] if rq.postData !=None else rq.postData,
+														headers = str(rq.headers)[:10000] if rq.headers !=None else rq.headers
+														)
 
+		
+			# phish_db_layer.add_page_req_info(req_info)
+			print(rq.postData)
+			page_requests.append(req_info)
+		
+		log_request_details(req)
+		
+		### log details of requests involved in the redirections
+		for r in req.redirectChain:
+			log_request_details(r)
+		
 		await req.continue_()
 
 	async def handle_response(res ):
@@ -406,17 +375,31 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 		except Exception as e:
 			logger.info('handle_response: Exception!! ::'+res.url+' :: '+str(e))
 
-		rsp_info = phish_db_schema.Page_Response_Info(response_url = res.url, response_file_path = file_path, response_file_hash = digest)
+		rsp_info = phish_db_schema.Page_Response_Info(	response_url = res.url, 
+														response_file_path = file_path, 
+														response_file_hash = digest,
+														response_status = str(res.status),
+														response_headers = str(res.headers)[:10000] if res.headers !=None else res.headers
+													)
 		# phish_db_layer.add_page_rsp_info(rsp_info)
 		page_responses.append(rsp_info)
 
 	async def get_field(field_selector, frameIndex):
+		###
+		### Ger field details based on the selector
+		###
+
+		form = ''
+		form_id=''
 		try:
 			frame = get_frame(frameIndex, pup_page)
 			await frame.waitFor(field_selector)
-			field = await frame.J(field_selector);
-			form = await frame.Jeval(field_selector, "(el)=>{ return el.form.name }");
-			form_id = await frame.Jeval(field_selector, "(el)=>{ return el.form.id }");
+			field = await frame.J(field_selector)
+			try:
+				form = await frame.Jeval(field_selector, "(el)=>{ return el.form.name }")
+				form_id = await frame.Jeval(field_selector, "(el)=>{ return el.form.id }")
+			except:
+				return field,form,form_id
 			return field, form, form_id
 		except Exception as e:
 			logger.info('get_field(%s,%s): Exception -> Failed getting field!! %s ;' %(str(field_selector), str(frameIndex), str(e)))
@@ -426,6 +409,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 		###
 		### Iterate through each element and provide respective input
 		###
+
 		form = None 
 		form_id = None
 		field_selector = ''
@@ -451,21 +435,20 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 				### Type the value in the field 
 				if field !=None and await field.isIntersectingViewport(): 
 					await reset_element(field, pup_page, field_selector)							
-					print('typing value ::', element.element_value)
-					# print(field)
+					print('typing value ::', element.element_value)					
 					await field.focus()
 					await field.type(element.element_value)
 					time.sleep(3)
-					await get_frame(element.element_frame_index, pup_page).Jeval(field_selector, "(el)=>{ el.blur(); }");
+					await get_frame(element.element_frame_index, pup_page).Jeval(field_selector, "(el)=>{ el.blur(); }")
 					time.sleep(3)
 
 			except Exception as ve:
-				print('Input Value!!', ve)
+				
 				logger.info('Input Value (%s,%s): Exception -> Failed on entering value ;%s' %(str(count), curr_url, str(ve)))
 		
 		return form, form_id
 
-	### Intercept requests and responses from the pages
+	### Intercept and handle requests and responses from the pages
 	await pup_page.setRequestInterception(True)
 	pup_page.on('request', lambda req: asyncio.ensure_future(handle_request(req)))
 	pup_page.on('response',  lambda res: asyncio.ensure_future(handle_response(res)))
@@ -526,20 +509,28 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 				page.responses = page_responses		
 				site_pages.append(page)
 				
-				### Stop execution when page navigated to a different domain
+				### Continue execution even when page navigated to a different domain
 				if org_url.domain != page_url.domain :
 					logger.info('crawl_page_info(%s,%s):  Navigated to different domain!!'%(str(count), curr_url))
 					phish_db_layer.add_pages_to_site(site_obj.phish_tank_ref_id, site_pages, phish_url)
-					is_run_complete = True
-					return;
+					# is_run_complete = True
+					# return;
 				time.sleep(5)
+				
 				### Get DOM details of the page
 				await pup_page.addScriptTag({'content': js_domelements_position})
 				res = await pup_page.evaluate("()=> get_elements(document, -1)")
+				
+				### Add Gremlin script to the page to be used later  
+				await pup_page.addScriptTag({'url': 'https://unpkg.com/gremlins.js' })
 
+				### Execute Script to override window open
+				await pup_page.addScriptTag({'content': js_override_window_open})
+				await pup_page.evaluate("()=>w_override(window,window.open)")
+
+				### Get DOM tree to keep track of changes to the DOM
 				dom_tree= await pup_page.evaluate(js_elements_tree)	
 
-				# print(dom_tree)
 				### Check if the DOM structure is same as the previously visited page
 				samePage = samePage+1 if temp==dom_tree else 0;
 
@@ -553,8 +544,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 				### Clear any overlays by clinking on all buttons
 				await clear_overlays()	
 				
-				time.sleep(15)
-
+				
 				temp = dom_tree
 				form = None
 				form_id = None
@@ -563,8 +553,8 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 				page = parse_elements(res,path_slice,page)
 				is_submit_success = False
 
-				
-				SUBMIT_METHODS = [ 'form_name', 'form_id', 'submit_button','button', 'enter_submit', 'gremlin_clicks' ]
+				### Different methods to submit the data , prioritized from specific method to more generalized
+				SUBMIT_METHODS = ['form_name', 'form_id', 'submit_button','button', 'canvas_click','path_click', 'enter_submit', 'gremlin_clicks' ]
 
 				### Try submitting via multiple methods
 				for sub_method in SUBMIT_METHODS:
@@ -577,12 +567,11 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 					try:
 						if sub_method == 'button':
 							field_buttons = await pup_page.JJ('button')
+							print(field_buttons)
 							for field_btn in field_buttons:
 								await input_values(page,curr_url)
 								time.sleep(5)
-								print('Entered input values!!')
-								
-								
+								print('Entered input values!!')								
 								await field_btn.focus()
 								if await field_btn.isIntersectingViewport():
 									try:					
@@ -594,7 +583,6 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 									except Exception as fe:
 										print(fe)
 								await pup_page.goto(curr_url, {'waitUntil':['networkidle0', 'domcontentloaded'],'timeout':900000 })
-								
 							else:
 								continue
 							break
@@ -610,10 +598,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 
 						if sub_method == 'form_id':
 							field_submit = await pup_page.JJ('form[id="'+form_id+'"]')
-							if len(field_submit)>0:
-								# form, form_id = await input_values(page, curr_url)
-								# time.sleep(5)
-								# print('Entered input values!!')
+							if len(field_submit)>0:								
 								print('form submitted by id')
 								await pup_page.Jeval('form[id="'+form_id+'"]', "(fm) =>{fm.submit();}") 
 								is_submit_success =  await is_navigate_success()
@@ -622,10 +607,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 
 						if sub_method == 'submit_button':
 							field_submit = await pup_page.JJ('input[type="submit"]')
-							if len(field_submit) > 0:
-								# form, form_id = await input_values(page, curr_url)
-								# time.sleep(5)
-								# print('Entered input values!!')
+							if len(field_submit) > 0:								
 								print('submit button clicked!!')
 								await field_submit[0].click()
 								is_submit_success =  await is_navigate_success()
@@ -638,16 +620,39 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 							await pup_page.keyboard.press('Enter')
 							is_submit_success =  await is_navigate_success()
 							
+						if sub_method == 'canvas_click':
+							field_submit = await pup_page.JJ('canvas')
 
-						if sub_method == 'gremlin_clicks':
-							await pup_page.addScriptTag({'url': 'https://unpkg.com/gremlins.js' })
-							# console.log('Script injected @ '+new Date(Date.now()).toLocaleString())
-							# await pup_page.Jeval('form[id="'+form_id+'"]', "(fm) =>{fm.submit();}") 
+							if len(field_submit) > 0:								
+								print('canvas found!! To be  clicked!!')
+								await field_submit[0].click()								
+								print('Canvas::  Hover over and click!!')
+								await field_submit[0].hover()								
+								await field_submit[0].click()
+								is_submit_success =  await is_navigate_success()
+							else:
+								sub_method = SUBMIT_METHODS.index(sub_method)+1
+
+						if sub_method == 'path_click':
+							field_submit = await pup_page.JJ('path')
+
+							if len(field_submit) > 0:								
+								print('Path found!! To be  clicked!!')
+								await field_submit[0].click()								
+								print('Path::  Hover over and click!!')
+								await field_submit[0].hover()								
+								await field_submit[0].click()
+								is_submit_success =  await is_navigate_success()
+							else:
+								sub_method = SUBMIT_METHODS.index(sub_method)+1
+
+						if sub_method == 'gremlin_clicks':			
+					
 							await pup_page.evaluate("""() => { gremlins.createHorde({
-								species: [gremlins.species.clicker(),gremlins.species.toucher(),
-											gremlins.species.scroller()],
+								species: [gremlins.species.clicker({clickTypes:['click','mousedown','mouseup', 'mousemove', 'dblclick']})],
+											
 								mogwais: [gremlins.mogwais.alert(),gremlins.mogwais.fps(),gremlins.mogwais.gizmo()],								
-								strategies: [gremlins.strategies.allTogether({delay: 200, nb: 100 })]
+								strategies: [gremlins.strategies.allTogether({delay: 500, nb: 1000 })]
 							}).unleash() }"""
 							)
 							time.sleep(5)
@@ -690,14 +695,14 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 		if not is_run_complete:
 			phish_db_layer.add_pages_to_site(site_obj.phish_tank_ref_id ,site_pages, phish_url)
 
-async def main(url, phish_id):
+async def main(url, phish_id, time_out=600):
 
 	try:
 		site_obj = phish_db_schema.Sites(site_url = url, phish_tank_ref_id = phish_id)
 		site_obj = phish_db_layer.add_site_info(site_obj)
-		# print(site_obj)
+		print(site_obj)		
 		# Starts the crawling process with a execution timeout
-		await asyncio.wait_for( crawl_web_page(url, site_obj, phish_id), timeout = 600)
+		await asyncio.wait_for( crawl_web_page(url, site_obj, phish_id), timeout = time_out)
 	except asyncio.TimeoutError:
 		print('timeout')
 
@@ -705,8 +710,9 @@ async def main(url, phish_id):
 parser = argparse.ArgumentParser(description="Crawl phishing links")
 parser.add_argument('url', type=str, help= "URL to crawl")
 parser.add_argument('--phish_id', default=-1, help="Unique id from phishtank database(optional)" )
+parser.add_argument('--timeout', default=600, help="Time duration after which the program will terminate" )
 
 if __name__ == '__main__':
 	args = parser.parse_args()
-	print(args.url, args.phish_id)
-	asyncio.get_event_loop().run_until_complete(main(args.url, args.phish_id))
+	print(args.url, args.phish_id, args.timeout)
+	asyncio.get_event_loop().run_until_complete(main(args.url, args.phish_id, args.timeout))

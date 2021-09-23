@@ -22,6 +22,7 @@ dir_path = dir_path +'/../../data'
 logger = Phish_Logger.get_phish_logger('page_crawler.py')
 
 textTags=['DIV','SPAN','TD','LABEL','H1','H2','H3','P','STRONG']
+
 password = None
 
 #### MAIN ####
@@ -65,12 +66,9 @@ def parse_elements(res,path,page):
 		#Enumerate all the elements in the page
 		for index,r in enumerate(res):
 			#Filter Input and Select tags which are not hidden
-			# print(r["tag"])
-			# print('******************************Processing Element ::***********************************************')
-		
+
 			if any(tag in r["tag"] for tag in ['INPUT']) and 'type' in r and r["type"] not in ['hidden','button','submit','reset','radio','checkbox'] and r["visibility"]!='hidden':
-				# print('******************************Processing Element ::***********************************************')
-				# print(r)
+				
 				flag=False;
 				elementCount=elementCount+1;
 				elementId   = r["id"] if r["id"]!=None else "Unknown"+str(index)
@@ -112,7 +110,7 @@ def parse_elements(res,path,page):
 								break;
 				if flag==False:           
 					text=screenshot_slicing.img_to_text(path,'I',r["left"]-5,r["top"]-5,r["right"]+5,r["bottom"]+5,3) 
-					#print('Screenshot inner text: ',text)
+					
 					text = filterData(text)
 					if len(text)>1 :    					
 						element.parsed_texts.append(text)
@@ -122,7 +120,7 @@ def parse_elements(res,path,page):
 	          
 				if flag==False:           
 					text=screenshot_slicing.img_to_text(path,'L',r["left"]-200,r["top"],r["left"],r["bottom"],3)
-					#print(text)  
+					
 					text = filterData(text)  
 					if len(text)>1 :      					
 						element.parsed_texts.append(text)
@@ -131,7 +129,7 @@ def parse_elements(res,path,page):
 						flag=True if len(element.categories[-1])>1 else False  
 					else:          
 						text=screenshot_slicing.img_to_text(path,'T',r["left"],r["top"]-(r["height"]+5),r["right"],r["bottom"]-(r["bottom"]-r["top"]),3)  
-						#print('Screenshot result:',text)
+						
 						text = filterData(text)    
 						if len(text)>1 :						
 							element.parsed_texts.append(text)
@@ -157,7 +155,7 @@ def parse_elements(res,path,page):
 													  element_parsed_text = parsed_text, 
 													  element_parsed_method = parsed_method)
 				page.elements.append(element_db)
-				# phish_db_layer.add_element_info(element_db)
+				
 				print('parse_elements(%s) Element ->  Name: %s ;  Html_Id: %s ; Category: %s ; Value: %s; Parsed_text: %s; Parsed_method:%s' % ( page.page_image_id,element.name, element.html_id,category,value,parsed_text,parsed_method))
 	except Exception as pre:
 		print('Parse_Elements :: Exception !! ',pre)	
@@ -165,15 +163,17 @@ def parse_elements(res,path,page):
 
 def get_frame(frameIndex, pup_page):
 	frame = pup_page
+	
 	if frameIndex != -1 and pup_page.frames!=None:
 		frame = pup_page.frames[frameIndex+1]
+	
 	return frame
 
 async def reset_element(element, page, field_selector):
 	try:
 		# await get_frame(element.element_frame_index, page).click()
 		if  await element.getProperty("type") not in ["hidden","button","reset","a","checkbox","submit","radio"] and await element.isIntersectingViewport(): 
-			# print('Resetting Element!!')	
+				
 			await element.focus()
 			# await  get_frame(element.element_frame_index, page).focus(field_selector)			
 			cnt = 0
@@ -186,7 +186,7 @@ async def reset_element(element, page, field_selector):
 			# await page.keyboard.press('Backspace');
 			# await page.keyboard.press('Enter')
 	except Exception as e:
-		# print('Reset Element!!', e)
+		
 		logger.info('reset_element(): Exception!!') 
 
 async def crawl_web_page(phish_url,site_obj, phish_id=-1):
@@ -198,6 +198,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 	                            '--ignore-certificate-errors'
 	                           ]
 	                     })
+	 
 
 	pup_page = await browser.newPage()
 
@@ -205,7 +206,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 	js_elements_tree       = """  ()=>{ 
 							var elements ='';
 							
-							var e = document.getElementsByTagName('*');   
+							var e = document.querySelectorAll('input, div, button');   
 							for (var i=0; i<e.length; i++) {
 								elements = elements+" "+e[i].tagName+";"							}
 							
@@ -293,20 +294,22 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 		field_buttons = await pup_page.JJ('button')
 
 		### Click any popup buttons
-		for field_btn in field_buttons:
+		# for field_btn in field_buttons:
 			
-			if await field_btn.isIntersectingViewport():
-				try:				
-					await field_btn.click()   
-				except Exception as fe:
-					print(fe)
+		# 	if await field_btn.isIntersectingViewport():
+		# 		try:				
+		# 			await field_btn.click()   
+		# 		except Exception as fe:
+		# 			print(fe)
 
+		print('overlay cleared')
 		## Generate random clicks to dispose alerts and popup boxes
+		#species: [gremlins.species.clicker({clickTypes:['click', 'dblclick']})],strategies: [gremlins.strategies.bySpecies({delay: 500, nb: 50 })]
+									
 		await pup_page.evaluate("""() => { gremlins.createHorde({
 								species: [gremlins.species.clicker({clickTypes:['click', 'dblclick']})],
-											
-								mogwais: [gremlins.mogwais.alert(),gremlins.mogwais.fps(),gremlins.mogwais.gizmo()],								
-								strategies: [gremlins.strategies.bySpecies({delay: 500, nb: 50 })]
+								strategies: [gremlins.strategies.bySpecies({delay: 200, nb: 20 })],
+								mogwais: [gremlins.mogwais.alert()]								
 							}).unleash() }"""
 							)
 		time.sleep(10)
@@ -332,7 +335,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 
 		
 			# phish_db_layer.add_page_req_info(req_info)
-			print(rq.postData)
+			# print(rq.postData)
 			page_requests.append(req_info)
 		
 		log_request_details(req)
@@ -384,6 +387,12 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 		# phish_db_layer.add_page_rsp_info(rsp_info)
 		page_responses.append(rsp_info)
 
+	def is_field_visible(el):
+		l,t,r,b = map(float,el.element_position.split(';'))
+		if (r-l>0 and b-t >0):
+			return True
+		return False
+
 	async def get_field(field_selector, frameIndex):
 		###
 		### Ger field details based on the selector
@@ -419,17 +428,19 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 
 		for element in curr_page.elements:
 			try:
+				if not is_field_visible(element):
+					continue
 				logger.info('crawl_page_info(%s,%s): Providing input for Element (%s,%s,%s,%s) ' %(str(count),curr_url,element.element_name,element.element_html_id,element.element_tag,element.element_value))
 				field = None		
 				field_selector = ''				
-				print('Element :: ', element)
+				print('Element :: ', element)	
 
-				if 'Unknown' not in element.element_name and len(element.element_name)>0:	
+				if element.element_name!=None and len(element.element_name)>0 and 'Unknown' not in element.element_name  :						
 					field_selector = 'input[name='+element.element_name+']'					
 					field, form, form_id = await get_field(field_selector, element.element_frame_index)
 
-				elif 'Unknown' not in element.element_id and len(element.element_id)>0:
-					field_selector = 'input[id='+element.element_id+']'	
+				elif  element.element_html_id != None and len(element.element_html_id)>0 and 'Unknown' not in element.element_html_id :					
+					field_selector = 'input[id='+element.element_html_id+']'	
 					field, form, form_id = await get_field(field_selector, element.element_frame_index)
 
 				### Type the value in the field 
@@ -467,6 +478,9 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 
 	try:
 		loop_count=0
+		### Different methods to submit the data , prioritized from specific method to more generalized
+		SUBMIT_METHODS = ['form_name', 'form_id', 'submit_button','button', 'canvas_click','path_click', 'enter_submit']#, 'gremlin_clicks' ] 
+		SUBMIT_BUTTON_INDEX =-1
 		### Parse and Interact with the pages
 		while loop_count<20:
 
@@ -553,36 +567,38 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 				page = parse_elements(res,path_slice,page)
 				is_submit_success = False
 
-				### Different methods to submit the data , prioritized from specific method to more generalized
-				SUBMIT_METHODS = ['form_name', 'form_id', 'submit_button','button', 'canvas_click','path_click', 'enter_submit', 'gremlin_clicks' ]
-
+				
 				### Try submitting via multiple methods
 				for sub_method in SUBMIT_METHODS:
 
 					print('Submitting method :: ', sub_method)
 					form, form_id = await input_values(page, curr_url)
-					time.sleep(5)
+					time.sleep(15)
 					print('Entered input values!!')
 
 					try:
 						if sub_method == 'button':
 							field_buttons = await pup_page.JJ('button')
-							print(field_buttons)
-							for field_btn in field_buttons:
-								await input_values(page,curr_url)
-								time.sleep(5)
-								print('Entered input values!!')								
+							
+							for bt_ind, field_btn in enumerate(field_buttons):
+								btn_pos = await field_btn.boundingBox()		
 								await field_btn.focus()
-								if await field_btn.isIntersectingViewport():
+
+								if btn_pos!=None and btn_pos['width']>0 and btn_pos['height']>0 and  await field_btn.isIntersectingViewport():
 									try:					
 										print('Button clicked')
 										await field_btn.click()   
 										is_submit_success =  await is_navigate_success()
 										if is_submit_success:
+											SUBMIT_METHODS.insert(0,sub_method)
+											# SUBMIT_BUTTON_INDEX = bt_ind 
 											break
 									except Exception as fe:
 										print(fe)
-								await pup_page.goto(curr_url, {'waitUntil':['networkidle0', 'domcontentloaded'],'timeout':900000 })
+									await pup_page.goto(curr_url, {'waitUntil':['networkidle0', 'domcontentloaded'],'timeout':900000 })
+									await input_values(page,curr_url)
+									print('Entered input values!!')	
+									time.sleep(5)
 							else:
 								continue
 							break
@@ -663,6 +679,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 						print(se)
 
 					if is_submit_success:
+						SUBMIT_METHODS.insert(0,sub_method)
 						logger.info('crawl_page_info(%s,%s): Successfully submitted!! ' %(str(count), curr_url))
 						break
 

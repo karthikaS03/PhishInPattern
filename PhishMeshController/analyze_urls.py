@@ -9,7 +9,7 @@ import json
 import sys
 import csv 
 sys.path.append('/home/sk-lab/Desktop/PhishProDetector/PhishMeshCrawler/')
-from database import phish_db_layer
+from database import phish_db_layer, phish_db_schema
 from docker_config import *
 from docker_monitor import *
 
@@ -110,13 +110,14 @@ def stop_running_containers():
 
 def fetch_urls_from_db(count=0):
 	if count>0:
-		phishtank_dets = phish_db_layer.fetch_phishtank_urls(count)
+		phishtank_dets = phish_db_layer.fetch_openphish_urls(count) #phish_db_layer.fetch_phishtank_urls(count)
 		print('Fetching URLS ::'+str(count))
 		
 		crawl_urls={}
 		for item in phishtank_dets:
-			id = id_prefix + str(item.phish_tank_ref_id)
-			crawl_urls[str(id)] = {'url' : item.phish_tank_url, 'count':0}			
+			# print(isinstance(item , phish_db_schema.Open_Phish_Links))
+			id = id_prefix + (str(item.phish_tank_ref_id) if not isinstance(item , phish_db_schema.Open_Phish_Links)  else 'openphish_'+ str(item.open_phish_link_id))
+			crawl_urls[str(id)] = {'url' : item.phish_tank_url if not isinstance(item , phish_db_schema.Open_Phish_Links) else item.open_phish_url, 'count':0}			
 			item.is_analyzed = True
 			phish_db_layer.update_analysis_url(item)
 		return crawl_urls
@@ -161,12 +162,12 @@ def fetch_from_file():
 
 def process_phishing_urls():	
 	while True:
-		phish_urls  =   fetch_from_file() #fetch_urls_from_db(max_containers) #fetch_from_file() #
+		phish_urls  =   fetch_urls_from_db(max_containers) #fetch_urls_from_db(max_containers) #fetch_from_file() #
 		processed_ids = process_urls_parallel(phish_urls, collection_script, container_timeout, max_containers)		
 		if len(client.containers.list())>30:
 			print('docker pruning started!!')
 			docker_prune()
-		break
+		# break
 
 		
 def main():

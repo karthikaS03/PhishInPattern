@@ -15,9 +15,44 @@ sha_file_hashes = defaultdict(list)
 ssdeep_file_hashes = defaultdict(list)
 
 def calculate_ssdeep_hash(file_path, file_name):
-	global ssdeep_file_hashes
-	file_hash = ssdeep.hash_from_file(file_path)
-	ssdeep_file_hashes[file_hash].append(file_name)
+	try:
+		global ssdeep_file_hashes
+		# print(file_path)
+		if file_path !='' and os.path.exists(file_path):
+			if 'tar' in file_path:
+				t = tarfile.open(file_path)				
+				with open('./temp', 'wb') as fd:
+					fbuf = t.extractfile('data'+file_name)
+					fd.write(fbuf.read())
+				file_hash = ssdeep.hash_from_file('./temp')
+				# print(file_path, file_name, file_hash)
+				return file_hash
+			else:
+				file_hash = ssdeep.hash_from_file(file_path)
+				# print(file_path, file_hash)
+				ssdeep_file_hashes[file_hash].append(file_name)
+				return file_hash
+		return ''
+	except Exception as e:
+		# print(e)
+		return ''
+
+def cluster_ssdeep_hashes(new_hash, hashes_set):
+	
+	similarity_scores = {}
+	SSDEEP_SIMILARITY_THRESHOLD = 75
+
+	for h in hashes_set:
+		try:
+			score = ssdeep.compare(h, new_hash)
+			similarity_scores[h] = score
+			
+		except Exception as e:
+			continue
+			# print(new_hash, e)
+	# print(new_hash, similarity_scores)
+
+	return dict(filter(lambda x: x[1] > SSDEEP_SIMILARITY_THRESHOLD, similarity_scores.items()))
 
 def calculate_sha_hash(file_path, file_name):
 	global sha_file_hashes

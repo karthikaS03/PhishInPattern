@@ -370,7 +370,10 @@ def update_element(element):
 def update_analysis_url(phishtank_obj):
   try:
     session = create_db_session()
-    e = session.query(Phish_Tank_Links).get(phishtank_obj.phish_tank_ref_id)
+    if isinstance(phishtank_obj, Phish_Tank_Links):
+      e = session.query(Phish_Tank_Links).get(phishtank_obj.phish_tank_ref_id)
+    else:
+      e = session.query(Open_Phish_Links).get(phishtank_obj.open_phish_link_id)
     e.is_analyzed = phishtank_obj.is_analyzed
     session.commit()
     session.close()

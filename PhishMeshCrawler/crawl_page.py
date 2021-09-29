@@ -1,5 +1,4 @@
-#!/usr/bin/python
-# coding=utf8
+
 import sys
 # sys.setdefaultencoding('utf-8')
 import os
@@ -314,7 +313,89 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 							)
 		time.sleep(10)
 
+	async def get_noninput_elements(screenshot_path): 
+
+		###
+		### javascript code to calculate size of all elements in the page and sort them in decreasing manner
+		### Returns poisiton of the element with the size and tag 
+		###
+
+		js_all_elements = """ 
+        
+            element_details = []
+
+            function get_elements(elems, parent_node_pos){
+                var children_size = 0
+                for (var i=0 ; i <elems.length;){
+                
+                    let el = elems[i]
+                    console.log(el)
+                    if (el == null){
+                        i++
+                        continue
+                    }
+                    var rect = el.getBoundingClientRect();
+								
+                    var dimensions = ''
+                    if (rect != undefined){
+                        dimensions = rect.left +';' + rect.right +';' +
+                                     rect.top + ';' + rect.bottom + ';' +
+                                     rect.height
+                    }
+                    let elem_det = {'pos': parent_node_pos +'_' + i,
+                                    'tag': el.tagName,
+                                    'size': el.clientWidth * el.clientHeight,
+                                    'dimension': dimensions
+                                    }
+    
+                    console.log(elem_det['pos'], '>>>  =================== >>>')              
+                    children_size = children_size+ elem_det['size']                
+                    console.log(elem_det)
+                    if(el.children.length>0){
+                        console.log(elem_det['pos'], el.children)
+                        let child_size =  get_elements(el.children, elem_det['pos'])
+                        console.log(elem_det['pos'], child_size)
+                        elem_det['size'] = elem_det['size'] - child_size
+                    
+                    
+                    }
+                    console.log(elem_det)
+                    console.log(elem_det['pos'], ' <<< ********************** <<<')
+                    element_details.push(elem_det)
+                    i++
+            
+                }
+                return children_size
+
+            }
+
+            function process_elements(parent_element){
+                get_elements(parent_element.children, 0)
+                //element_details = element_details.sort((a,b) => (a.size > b.size))
+                return element_details
+            } 
+        """
+
+		all_elements = []
 		
+
+		for i,f in enumerate(pup_page.frames):
+			await f.addScriptTag({'content': js_all_elements})
+			frame_elements = await f.evaluate("()=> process_elements(document.body)")
+			
+			for fe in frame_elements:
+				fe['frame_no'] = i
+				all_elements.append(fe)            
+			# all_elements.extend(frame_elements)
+		all_elements.sort(key = lambda x: x['size'], reverse = True)
+
+		ignore_tags = ['INPUT', 'A', 'SCRIPT', 'LI', 'UL', 'FORM']
+		for i,el in enumerate(all_elements):
+			dim = list(map(float,el['dimension'].split(';'))) if len(el['dimension'])>0 else None
+			if el['tag'] not in ignore_tags and el['size']>15000 and dim!=None and dim[4]<150:
+				screenshot_slicing.img_to_text(screenshot_path, 'captcha_'+str(i)+'_'+str(el['size'])+'_'+el['tag'], dim[0], dim[2], dim[1], dim[3] , 3)
+
+        
 
 	async def handle_request(req):
 		###
@@ -497,8 +578,8 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 				path= path+"/"+str(count)+'_'+str(page_count)+'_screenshot.png';
 				
 				try:
-					await pup_page.screenshot({'path': path, 'fullPage':True})
-					await pup_page.screenshot({'path': path_slice, 'fullPage':True})
+					await pup_page.screenshot({'path': path})#, 'fullPage':True})
+					await pup_page.screenshot({'path': path_slice})#, 'fullPage':True})
 				except Exception as e:
 					print(e)
 
@@ -553,12 +634,13 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 					phish_db_layer.add_pages_to_site(site_obj.phish_tank_ref_id, site_pages, phish_url)
 					logger.info('crawl_page_info(%s,%s): Page repeated for few times!! ' %(str(count), curr_url))					
 					is_run_complete = True
-					return;
+					return
 
 				### Clear any overlays by clinking on all buttons
 				await clear_overlays()	
 				
-				
+				await get_noninput_elements(path_slice)
+
 				temp = dom_tree
 				form = None
 				form_id = None
@@ -566,14 +648,13 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 				### Parse and Categorize each elements in the page
 				page = parse_elements(res,path_slice,page)
 				is_submit_success = False
-
 				
 				### Try submitting via multiple methods
 				for sub_method in SUBMIT_METHODS:
 
 					print('Submitting method :: ', sub_method)
 					form, form_id = await input_values(page, curr_url)
-					time.sleep(15)
+					time.sleep(5)
 					print('Entered input values!!')
 
 					try:

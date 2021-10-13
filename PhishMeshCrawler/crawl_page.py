@@ -563,6 +563,10 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 			
 		return form, form_id
 
+	def get_dom_hash(d_tree):
+		hasher = hashlib.md5(d_tree.encode())
+		return hasher.hexdigest()
+
 	### Intercept and handle requests and responses from the pages
 	await pup_page.setRequestInterception(True)
 	pup_page.on('request', lambda req: asyncio.ensure_future(handle_request(req)))
@@ -653,6 +657,8 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 				### Get DOM tree to keep track of changes to the DOM
 				dom_tree= await pup_page.evaluate(js_elements_tree)	
 				# print(dom_tree)
+				page.dom_hash = get_dom_hash(dom_tree)
+				print(page.dom_hash)
 
 				### Check if the DOM structure is same as the previously visited page
 				samePage = samePage+1 if temp==dom_tree else 0;

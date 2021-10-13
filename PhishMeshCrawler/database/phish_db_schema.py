@@ -9,48 +9,12 @@ currentdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(currentdir)
 sys.path.append(parentdir)
 from config.phish_db_config import *
+  
+db = create_engine(DB_CONN_SERVER)
+db.echo = True
 
-
-if __name__ == '__main__':
-
-  # DB_CONN_SERVER = DB_CONN_SERVER
-
-  db = create_engine(DB_CONN_SERVER)
-  db.echo = True
-
-  metadata = MetaData(db)
-  base = declarative_base()
-
-  Session = sessionmaker(bind=db)
-
-  session =Session()
-  base.metadata.create_all(db)
-  session.flush()
-  session.commit()
-
-  session =Session()
-  train={}
-  '''
-  with open('TrainingSet.json','r') as f:
-    train =json.load(f)
-  for obj in train:
-    category = Field_Category(field_category_name = obj['category'])
-    for text in obj['texts']:
-      category.training_set.append(Field_Training_Set(field_text = text))
-    session.add(category) 
-  '''
-
-  session.flush()
-  session.commit()
-else:
-  from config.phish_db_config import *
-    
-  db = create_engine(DB_CONN_SERVER)
-  db.echo = True
-
-
-  metadata = MetaData(db)
-  base = declarative_base()
+metadata = MetaData(db)
+base = declarative_base()
 
 class Field_Category(base):
   __tablename__ ='tbl_FieldCategory'
@@ -116,7 +80,7 @@ class Open_Phish_Links(base):
   is_analyzed= Column(Boolean)
  
   def __repr__(self):
-    return 'Phishtank Links  %d: "%s" %s' % (self.open_phish_link_id, self.open_phish_url,self.status)
+    return 'OpenPhish Links  %d: "%s" %s' % (self.open_phish_link_id, self.open_phish_url,self.status)
 
 
 class Site_Images(base):
@@ -147,9 +111,11 @@ class Pages(base):
   page_title=Column(String(100))
   site_id = Column(Integer, ForeignKey('tbl_Sites.site_id'))
   page_image_id = Column(String(50))
+  dom_hash = Column(String(50))
   elements = relationship("Elements", backref='tbl_Pages')
   requests = relationship("Page_Request_Info", backref='tbl_PageRequestInfo')
   responses = relationship("Page_Response_Info", backref='tbl_PageResponseInfo')
+  
   def __repr__(self):
     return 'Pages  "%s" %d' % ( self.page_url, self.site_id)
 
@@ -168,7 +134,8 @@ class Elements(base):
   field_category_id = Column(Integer, ForeignKey('tbl_FieldCategory.field_category_id'))
   element_frame_index = Column(Integer)
   def __repr__(self):
-    return 'Elements  : "%s" "%s" "%s" "%s" "%s" %d' % (self.element_tag, self.element_name, self.element_html_id, self.element_parsed_text, self.element_value,  self.field_category_id)
+    return 'Elements  : "%s" "%s" "%s" "%s" "%s" %d "%s"' % (self.element_tag, self.element_name, self.element_html_id, self.element_parsed_text, 
+                                                        self.element_value,  self.field_category_id, self.element_position)
 
 class Site_Status(base):
   __tablename__ ='tbl_SiteStatus'
@@ -240,8 +207,6 @@ class Page_Request_Info(base):
   def __repr__(self):
     return 'Page_Request_Info %d : %s' %(self.request_id, self.request_url)
 
-
-
 class Page_Response_Info(base):
   __tablename__ = 'tbl_PageResponseInfo'
   response_id = Column(Integer, primary_key = True)
@@ -255,3 +220,48 @@ class Page_Response_Info(base):
   def __repr__(self):
     return 'Page_Response_Info %d : %s' %(self.response_id, self.response_url)
 
+class GSB_Data(base):
+  __tablename__ = 'tbl_GSB'
+  gsb_id = Column(Integer, primary_key = True)
+  url = Column(String(3000))
+  first_query_time = Column(TIMESTAMP, default = datetime.datetime.now())
+  first_flag = Column(Boolean)
+  first_se_flag = Column(Boolean)
+  first_result = Column(String(5000))
+  last_query_time = Column(TIMESTAMP, default = datetime.datetime.now())
+  last_flag = Column(Boolean)
+  last_se_flag = Column(Boolean)
+  last_result = Column(String(5000))
+
+
+if __name__ == '__main__':
+
+  # DB_CONN_SERVER = DB_CONN_SERVER
+
+  # db = create_engine(DB_CONN_SERVER)
+  # db.echo = True
+
+  # metadata = MetaData(db)
+  # base = declarative_base()
+
+  Session = sessionmaker(bind=db)
+
+  session =Session()
+  base.metadata.create_all(db)
+  session.flush()
+  session.commit()
+
+  session =Session()
+  train={}
+  '''
+  with open('TrainingSet.json','r') as f:
+    train =json.load(f)
+  for obj in train:
+    category = Field_Category(field_category_name = obj['category'])
+    for text in obj['texts']:
+      category.training_set.append(Field_Training_Set(field_text = text))
+    session.add(category) 
+  '''
+
+  session.flush()
+  session.commit()

@@ -205,9 +205,10 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 	js_elements_tree       = """  ()=>{ 
 							var elements ='';
 							
-							var e = document.querySelectorAll('input, div, button');   
+							var e = document.querySelectorAll('input, div, button, span, label');   
 							for (var i=0; i<e.length; i++) {
-								elements = elements+" "+e[i].tagName+";"							}
+								elements = elements+" "+e[i].tagName+"("+e[i].getBoundingClientRect().height+");"
+							}
 							
 							return elements; }
 							"""
@@ -274,14 +275,14 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 
 	async def is_navigate_success():
 		try:
-			# time.sleep(5)
+			# time.sleep(3)
 			try:
-				await pup_page.waitForNavigation({'timeout':10000})
+				await pup_page.waitForNavigation({'waituntil':'networkidle2','timeout':15000})
 			except Exception as ex:
 				print('navigation timeout!!!')
 			dom_tree= await pup_page.evaluate(js_elements_tree) 			
 			print('is_navigate_success ::' , temp!=dom_tree)
-
+			# print(dom_tree)
 			## Check if the page is naviagted to a page with different content
 			return  temp != dom_tree 
 		except Exception as e:
@@ -386,7 +387,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 			for fe in frame_elements:
 				fe['frame_no'] = i
 				all_elements.append(fe)            
-			# all_elements.extend(frame_elements)
+			
 		all_elements.sort(key = lambda x: x['size'], reverse = True)
 
 		ignore_tags = ['INPUT', 'A', 'SCRIPT', 'LI', 'UL', 'FORM']
@@ -416,10 +417,12 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 
 		
 			# phish_db_layer.add_page_req_info(req_info)
-			# print(rq.postData)
+			# print(rq.url,rq.postData)
 			page_requests.append(req_info)
 		
 		log_request_details(req)
+
+		
 		
 		### log details of requests involved in the redirections
 		for r in req.redirectChain:
@@ -468,9 +471,9 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 		# phish_db_layer.add_page_rsp_info(rsp_info)
 		page_responses.append(rsp_info)
 
-	def is_field_visible(el):
+	async def is_field_visible(el):
 		l,t,r,b = map(float,el.element_position.split(';'))
-		if (r-l>0 and b-t >0):
+		if (r-l>0 and b-t >0) or await el.isIntersectingViewport():
 			return True
 		return False
 
@@ -509,7 +512,9 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 
 		for element in curr_page.elements:
 			try:
-				if not is_field_visible(element):
+				# print(element, is_field_visible(element))
+				fv = await is_field_visible(element)
+				if not fv:
 					continue
 				logger.info('crawl_page_info(%s,%s): Providing input for Element (%s,%s,%s,%s) ' %(str(count),curr_url,element.element_name,element.element_html_id,element.element_tag,element.element_value))
 				field = None		
@@ -538,6 +543,24 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 				
 				logger.info('Input Value (%s,%s): Exception -> Failed on entering value ;%s' %(str(count), curr_url, str(ve)))
 		
+
+		dropdowns = await pup_page.JJ('select')
+
+		for i, dd in enumerate(dropdowns):
+			print(dd)
+			selected = await dd.JJeval('option', 'v=>v[1].value')
+			dd_id = options = await pup_page.JJeval('select','all=> all['+str(i)+'].getAttribute("id")')
+			dd_name = options = await pup_page.JJeval('select','all=> all['+str(i)+'].getAttribute("name")')
+			print(dd_id,dd_name)
+			dd_selector = None
+			if dd_id!=None or dd_id!='':
+				dd_selector = 'select[id='+dd_id+']'
+			elif dd_name!=None or dd_name!='':
+				dd_selector = 'select[name='+dd_name+']'
+			
+			if dd_selector!=None:
+				await pup_page.select(dd_selector, selected)
+			
 		return form, form_id
 
 	### Intercept and handle requests and responses from the pages
@@ -560,7 +583,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 	try:
 		loop_count=0
 		### Different methods to submit the data , prioritized from specific method to more generalized
-		SUBMIT_METHODS = ['form_name', 'form_id', 'submit_button','button', 'canvas_click','path_click', 'enter_submit']#, 'gremlin_clicks' ] 
+		SUBMIT_METHODS = ['button', 'submit_button', 'form_name', 'form_id',  'canvas_click','path_click', 'enter_submit']#, 'gremlin_clicks' ] 
 		SUBMIT_BUTTON_INDEX =-1
 		### Parse and Interact with the pages
 		while loop_count<20:
@@ -623,8 +646,13 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 				await pup_page.addScriptTag({'content': js_override_window_open})
 				await pup_page.evaluate("()=>w_override(window,window.open)")
 
+				### Clear any overlays by clicking on all buttons
+				if loop_count==1:
+					await clear_overlays()	
+
 				### Get DOM tree to keep track of changes to the DOM
 				dom_tree= await pup_page.evaluate(js_elements_tree)	
+				# print(dom_tree)
 
 				### Check if the DOM structure is same as the previously visited page
 				samePage = samePage+1 if temp==dom_tree else 0;
@@ -636,8 +664,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 					is_run_complete = True
 					return
 
-				### Clear any overlays by clinking on all buttons
-				await clear_overlays()	
+				
 				
 				await get_noninput_elements(path_slice)
 
@@ -676,7 +703,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 											break
 									except Exception as fe:
 										print(fe)
-									await pup_page.goto(curr_url, {'waitUntil':['networkidle0', 'domcontentloaded'],'timeout':900000 })
+									await pup_page.goto(curr_url, {'waitUntil':['networkidle2'],'timeout':900000 })
 									await input_values(page,curr_url)
 									print('Entered input values!!')	
 									time.sleep(5)
@@ -695,6 +722,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 
 						if sub_method == 'form_id':
 							field_submit = await pup_page.JJ('form[id="'+form_id+'"]')
+							
 							if len(field_submit)>0:								
 								print('form submitted by id')
 								await pup_page.Jeval('form[id="'+form_id+'"]', "(fm) =>{fm.submit();}") 

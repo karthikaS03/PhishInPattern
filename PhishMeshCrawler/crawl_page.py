@@ -829,7 +829,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 		if not is_run_complete:
 			phish_db_layer.add_pages_to_site(site_obj.phish_tank_ref_id ,site_pages, phish_url)
 
-async def main(url, phish_id, time_out=600):
+async def main(url, phish_id, time_out=900):
 
 	try:
 		site_obj = phish_db_schema.Sites(site_url = url, phish_tank_ref_id = phish_id)

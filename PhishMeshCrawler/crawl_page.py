@@ -625,20 +625,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 				title = await pup_page.evaluate(js_targeted_brands)
 				print('Crawling Page :: ',loop_count, ' :: ' , title)
 
-				### Append page details to site
-				page = phish_db_schema.Pages(site_id = site_obj.site_id ,page_url = curr_url,page_title = title, page_image_id = str(count)+"_"+str(page_count)+'_screenshot.png')		
-				page.requests = page_requests
-				page.responses = page_responses		
-				site_pages.append(page)
-				
-				### Continue execution even when page navigated to a different domain
-				if org_url.domain != page_url.domain :
-					logger.info('crawl_page_info(%s,%s):  Navigated to different domain!!'%(str(count), curr_url))
-					phish_db_layer.add_pages_to_site(site_obj.phish_tank_ref_id, site_pages, phish_url)
-					# is_run_complete = True
-					# return;
-				time.sleep(5)
-				
+							
 				### Get DOM details of the page
 				await pup_page.addScriptTag({'content': js_domelements_position})
 				res = await pup_page.evaluate("()=> get_elements(document, -1)")
@@ -657,8 +644,23 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 				### Get DOM tree to keep track of changes to the DOM
 				dom_tree= await pup_page.evaluate(js_elements_tree)	
 				# print(dom_tree)
+				
+				### Append page details to site
+				page = phish_db_schema.Pages(site_id = site_obj.site_id ,page_url = curr_url,page_title = title, page_image_id = str(count)+"_"+str(page_count)+'_screenshot.png')		
+				page.requests = page_requests
+				page.responses = page_responses		
 				page.dom_hash = get_dom_hash(dom_tree)
 				print(page.dom_hash)
+
+				site_pages.append(page)
+
+				### Continue execution even when page navigated to a different domain
+				if org_url.domain != page_url.domain :
+					logger.info('crawl_page_info(%s,%s):  Navigated to different domain!!'%(str(count), curr_url))
+					phish_db_layer.add_pages_to_site(site_obj.phish_tank_ref_id, site_pages, phish_url)
+					# is_run_complete = True
+					# return;
+				time.sleep(5)
 
 				### Check if the DOM structure is same as the previously visited page
 				samePage = samePage+1 if temp==dom_tree else 0;

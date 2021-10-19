@@ -12,7 +12,24 @@ containers_path = '../PhishMeshController/phish_containers_data/'
 # '../PhishMeshController/phish_containers_data/' #'/Data/PhishMesh_Data/'
 
 
-
+def get_captcha_slices(container_id = None, img_file = None, img_path = '../data/openphish_images/'):
+    for d in os.listdir(containers_path):
+        if 'palo'  in d:			
+            if container_id != None and d != container_id:
+                continue
+            try:
+                t = tarfile.open(containers_path+d+'/data.tar')                
+                t.extractall()
+                file_dir_path = './data/images/' + d.replace('container_','') +'/slices'
+                for f in os.listdir(file_dir_path):
+                    if img_file!=None and f!=img_file:
+                        continue
+                    if 'captcha'  in f:
+                        shutil.move( file_dir_path + '/' + f, img_path )
+                shutil.rmtree('./data')
+                t.close()
+            except Exception as te:
+                print(te)
 
 def get_screenshots(container_id = None, img_file = None, img_path = '../data/openphish_images/'):
     for d in os.listdir(containers_path):
@@ -122,5 +139,7 @@ if __name__ =='__main__':
 
     # get_files_with_canvas()
     # get_screenshots()
-    get_files_with_captcha()
+    # get_files_with_captcha()
     # get_pages_with_unknown_data()
+
+    get_captcha_slices(img_path='../data/captcha_slices/')

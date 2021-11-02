@@ -205,7 +205,7 @@ class Page_Request_Info(base):
   request_time = Column(TIMESTAMP, default=datetime.datetime.now())
   page_id = Column(Integer, ForeignKey('tbl_Pages.page_id'))
   def __repr__(self):
-    return 'Page_Request_Info %d : %s' %(self.request_id, self.request_url)
+    return 'Page_Request_Info %s : %s' %( self.request_url, self.post_data)
 
 class Page_Response_Info(base):
   __tablename__ = 'tbl_PageResponseInfo'
@@ -233,6 +233,11 @@ class GSB_Data(base):
   last_se_flag = Column(Boolean)
   last_result = Column(String(5000))
 
+class Captcha_Info(base):
+  __tablename__ = 'tbl_Captchas'
+  captcha_id = Column(Integer, primary_key = True)
+  page_image_id = Column(String(50))
+  captcha_details = Column(String(1000))
 
 if __name__ == '__main__':
 

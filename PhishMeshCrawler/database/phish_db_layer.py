@@ -102,6 +102,15 @@ def add_site_info(site_obj):
     
     logger.info('Exception occured in add_site_info: '+str(e))
 
+def add_captcha_info(captcha_obj):
+  try:
+    session = create_db_session()
+    session.add(captcha_obj)
+    session.commit()
+    # print('seesion committed')
+    session.close()
+  except Exception as e:
+    logger.info('Exception occured in add_captcha_info: '+str(e))
 
 def add_page_info(page_obj):
   try:
@@ -113,7 +122,6 @@ def add_page_info(page_obj):
   except Exception as e:
     print(e)
     logger.info('Exception occured in add_page_info: '+str(e))
-
 
 def add_element_info(elem_obj):
   try:
@@ -256,7 +264,6 @@ def fetch_field_training_set():
   except Exception as e:
     logger.info('Exception occured in fetch_field_training_set: '+str(e))
 
-
 def fetch_requested_resources():
   try:
     conn = db.connect()
@@ -271,6 +278,15 @@ def fetch_unknown_pages():
   try:
     conn = db.connect()
     query = text('SELECT * FROM get_pages_with_unknown_elements')
+    result = conn.execute(query)
+    return result.fetchall()
+  except Exception as e:
+    print(e)
+
+def fetch_pagewise_fields():
+  try:
+    conn = db.connect()
+    query = text('SELECT * FROM pagewise_fields')
     result = conn.execute(query)
     return result.fetchall()
   except Exception as e:
@@ -351,8 +367,6 @@ def fetch_unclassified_elements():
   except Exception as e:
     logger.info('Exception occured in fetch_unclassified_elements: '+str(e))
     
-    
-
 def update_element(element):
   try:
     session = create_db_session()
@@ -365,7 +379,6 @@ def update_element(element):
     session.close()
   except Exception as e:
     logger.info('Exception occured in update_element: '+str(e))
-
 
 def update_analysis_url(phishtank_obj):
   try:
@@ -415,8 +428,7 @@ def add_domain_certificate_status(domain_certificate_status):
     session.close()
   except Exception as e:
     logger.info('Exception occured in add_page_status: '+str(e))
-    
-    
+     
 def add_host_info(host_info):
   try:
     session = create_db_session()
@@ -463,7 +475,7 @@ def get_categories():
     session.commit()
     session.close()
     
-    return categories
+    return [x[0] for x in categories if x[0] not in ['Unknown','--Other--']]
   except Exception as e:
     logger.info('Exception occured in get_categories: '+str(e))    
 
@@ -515,3 +527,47 @@ def fetch_domains_for_host_details():
     return domains
   except Exception as e:
     logger.info('Exception occured in fetch_domains_for_host_details(): '+str(e))
+
+def fetch_gsb_urls():
+  try:
+    session = create_db_session()
+    phish_urls = []
+    for s in session.query(Open_Phish_Links).all():
+      a = Open_Phish_Links(open_phish_link_id = s.open_phish_link_id, open_phish_url = s.open_phish_url)
+      phish_urls.append(a)
+    session.commit()
+    session.close()
+    return phish_urls
+  except Exception as e:
+    print(e)
+    logger.info('Exception occured in fetch_openphish_urls: '+str(e))
+
+def update_gsb_table(url, result):
+  import datetime
+  try:
+    session = create_db_session()
+    flag = (result != "None")
+    se_flag = flag and ("SOCIAL_ENGINEERING" in result)
+    txt = result if flag else ""
+    
+    g = session.query(GSB_Data).filter(text('url="'+str(url)+'"')).first()
+    
+    if g == None:
+      g = GSB_Data(url = url, first_flag= flag, first_se_flag = se_flag, 
+                   first_result = txt)
+      session.add(g)
+    else:
+      g.last_query_time = datetime.datetime.now()
+      g.last_flag = flag
+      g.las_se_flag = se_flag
+      g.last_result = txt
+      session.merge(g)
+
+    session.commit()
+    session.close()
+
+  except Exception as e:
+    print(e)
+    logger.info('Exception occured in update_gsb_table(): '+str(e))
+
+   

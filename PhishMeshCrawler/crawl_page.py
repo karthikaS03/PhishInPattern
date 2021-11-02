@@ -14,6 +14,7 @@ import time
 import MNB_field_classifier
 import tldextract
 import argparse
+import extra_scripts
 
 dir_path = os.path.abspath(os.path.dirname(__file__))
 dir_path = dir_path +'/../../data'
@@ -45,7 +46,7 @@ def add_InnerText(element):
 	element.categories.append(category)
 	element.scores.append(score)
 	
-	return element;
+	return element
 
 def filterData(text):
 	try:
@@ -60,7 +61,7 @@ def filterData(text):
 
 def parse_elements(res,path,page):
 	try:
-		fields=[];
+		fields=[]
 		elementCount=0
 		#Enumerate all the elements in the page
 		for index,r in enumerate(res):
@@ -190,79 +191,19 @@ async def reset_element(element, page, field_selector):
 
 async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 
-	browser = await launch({ 'headless':False, 'args': [                             
+	browser = await launch({ 'headless':False, 
+							 'ignoreHTTPSErrors':True, 
+							 'args': [                             
 	                            '--no-sandbox',
 	                            '--disable-setuid-sandbox',                               
 	                            '--start-maximized',
-	                            '--ignore-certificate-errors'
+	                            '--ignore-certificate-errors',
+								'--ignore-certificate-errors-spki-list'
 	                           ]
 	                     })
 	 
 
 	pup_page = await browser.newPage()
-
-	### Javscript code to read the elements in a page, their properties and co-ordinates 
-	js_elements_tree       = """  ()=>{ 
-							var elements ='';
-							
-							var e = document.querySelectorAll('input, div, button, span, label');   
-							for (var i=0; i<e.length; i++) {
-								elements = elements+" "+e[i].tagName+"("+e[i].getBoundingClientRect().height+");"
-							}
-							
-							return elements; }
-							"""
-	js_domelements_position = """function get_elements(el, frameIndex){  
-							var tags = [];
-							var recs = [];   
-							var iframe_count = 0 
-							width  =Math.max(document.body.scrollWidth, document.body.offsetWidth, document.documentElement.clientWidth, document.documentElement.scrollWidth, document.documentElement.offsetWidth)
-							if(el==null) return recs;
-							var e = el.getElementsByTagName('*');   
-							for (var i=0; i<e.length; i++) {
-								var rect           = e[i].getBoundingClientRect();
-								
-								recs[i]={}
-								if (rect != undefined){
-									recs[i].right = rect.right;
-									recs[i].top = rect.top;
-									recs[i].bottom = rect.bottom;
-									recs[i].left = rect.left
-									recs[i].height = rect.height
-								}
-								recs[i].innerText  = e[i].textContent ;        
-								recs[i].tag        = e[i].tagName!= undefined? e[i].tagName : '';
-								recs[i].id         = e[i].id!=null?e[i].id:'None';
-								recs[i].name       = e[i].name!=null?e[i].name:'None';
-								recs[i].type       = e[i].type ;
-								recs[i].text       = e[i].Text ;
-								recs[i].value      = e[i].value ;
-								//recs[i].left       = (e[i].clientLeft/document.documentElement.clientWidth )* width;        
-								recs[i].visibility = e[i].style!= undefined ? e[i].style.visibility : 'null' ;
-								recs[i].placeholder= e[i].placeholder!=null?e[i].placeholder!=''?e[i].placeholder:'null':'null';
-								recs[i].form = 'Null'
-								recs[i].frameIndex = frameIndex
-								if (e[i].tagName =='IFRAME')
-								{
-									
-									frame_elements = get_elements (e[i].contentDocument, iframe_count)
-									recs = recs.concat(frame_elements)
-									iframe_count = iframe_count + 1
-								}								
-							}
-							return recs; }
-							"""
-	js_targeted_brands="""()=>{
-					  title  = document.title;
-					  return title;
-					  }"""
-
-
-	js_override_window_open ="""function w_override(window, open) {
-													window.open = (url) => {
-													open.call(window, url, '_self')
-													}
-								}"""
 
 	temp = None 
 	samePage = 0
@@ -275,12 +216,14 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 
 	async def is_navigate_success():
 		try:
-			# time.sleep(3)
+			# time.sleep(10)
+			# res = None
 			try:
 				await pup_page.waitForNavigation({'waituntil':'networkidle2','timeout':15000})
 			except Exception as ex:
 				print('navigation timeout!!!')
-			dom_tree= await pup_page.evaluate(js_elements_tree) 			
+				
+			dom_tree= await pup_page.evaluate("()=>get_dom_tree()") 			
 			print('is_navigate_success ::' , temp!=dom_tree)
 			# print(dom_tree)
 			## Check if the page is naviagted to a page with different content
@@ -321,67 +264,10 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 		### Returns poisiton of the element with the size and tag 
 		###
 
-		js_all_elements = """ 
-        
-            element_details = []
-
-            function get_elements(elems, parent_node_pos){
-                var children_size = 0
-                for (var i=0 ; i <elems.length;){
-                
-                    let el = elems[i]
-                    console.log(el)
-                    if (el == null){
-                        i++
-                        continue
-                    }
-                    var rect = el.getBoundingClientRect();
-								
-                    var dimensions = ''
-                    if (rect != undefined){
-                        dimensions = rect.left +';' + rect.right +';' +
-                                     rect.top + ';' + rect.bottom + ';' +
-                                     rect.height
-                    }
-                    let elem_det = {'pos': parent_node_pos +'_' + i,
-                                    'tag': el.tagName,
-                                    'size': el.clientWidth * el.clientHeight,
-                                    'dimension': dimensions
-                                    }
-    
-                    console.log(elem_det['pos'], '>>>  =================== >>>')              
-                    children_size = children_size+ elem_det['size']                
-                    console.log(elem_det)
-                    if(el.children.length>0){
-                        console.log(elem_det['pos'], el.children)
-                        let child_size =  get_elements(el.children, elem_det['pos'])
-                        console.log(elem_det['pos'], child_size)
-                        elem_det['size'] = elem_det['size'] - child_size
-                    
-                    
-                    }
-                    console.log(elem_det)
-                    console.log(elem_det['pos'], ' <<< ********************** <<<')
-                    element_details.push(elem_det)
-                    i++
-            
-                }
-                return children_size
-
-            }
-
-            function process_elements(parent_element){
-                get_elements(parent_element.children, 0)
-                //element_details = element_details.sort((a,b) => (a.size > b.size))
-                return element_details
-            } 
-        """
-
 		all_elements = []
-		
 
 		for i,f in enumerate(pup_page.frames):
-			await f.addScriptTag({'content': js_all_elements})
+			await f.addScriptTag({'content':extra_scripts.js_dom_scripts})
 			frame_elements = await f.evaluate("()=> process_elements(document.body)")
 			
 			for fe in frame_elements:
@@ -393,10 +279,41 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 		ignore_tags = ['INPUT', 'A', 'SCRIPT', 'LI', 'UL', 'FORM']
 		for i,el in enumerate(all_elements):
 			dim = list(map(float,el['dimension'].split(';'))) if len(el['dimension'])>0 else None
-			if el['tag'] not in ignore_tags and el['size']>15000 and dim!=None and dim[4]<150:
-				screenshot_slicing.img_to_text(screenshot_path, 'captcha_'+str(i)+'_'+str(el['size'])+'_'+el['tag'], dim[0], dim[2], dim[1], dim[3] , 3)
+			
+			### check if total size is greater thean a threshold and the height is less than threshold
+			if el['tag'] not in ignore_tags and el['size']>5000 and dim!=None and dim[4]<150 and  el['class']=='survey_button':			
+				txt = screenshot_slicing.img_to_text(screenshot_path, 'captcha_'+str(el['pos'])+'_'+str(el['size'])+'_'+el['tag'], dim[0], dim[2], dim[1], dim[3] , 3)
+				
 
-        
+
+	async def detect_known_captcha(page_image_id ):
+		try:
+			await pup_page.addScriptTag({'content':extra_scripts.js_captchas})
+			captcha_details = await pup_page.evaluate("""()=> findRecaptchaClients()""")
+			# print(captcha_details)
+			if captcha_details:
+				cap_info = phish_db_schema.Captcha_Info( page_image_id = page_image_det, 
+														captcha_details = str(captcha_details)
+													   )
+				phish_db_layer.add_captcha_info(cap_info)
+
+			captcha_details = await pup_page.evaluate("""()=> find_hcaptcha()""")
+			# print(captcha_details)
+			if captcha_details:
+				cap_info = phish_db_schema.Captcha_Info( page_image_id = page_image_det, 
+														captcha_details = str(captcha_details)
+													   )
+				phish_db_layer.add_captcha_info(cap_info)
+
+			captcha_details = await pup_page.evaluate("""()=> find_keycaptcha()""")
+			# print(captcha_details)
+			if captcha_details:
+				cap_info = phish_db_schema.Captcha_Info( page_image_id = page_image_det, 
+														captcha_details = str(captcha_details)
+													   )
+				phish_db_layer.add_captcha_info(cap_info)
+		except:
+			pass
 
 	async def handle_request(req):
 		###
@@ -404,31 +321,33 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 		###
 
 		def log_request_details(rq):
-			req_url = rq.url
-			req_domain =  '.'.join(tldextract.extract(req_url)[1:]) 
-			req_info = phish_db_schema.Page_Request_Info(request_url = req_url, 
-														request_domain = req_domain, 
-														request_method = rq.method, 
-														request_type = rq.resourceType
-														,req_id = rq._requestId,
-														post_data = rq.postData[:1990] if rq.postData !=None else rq.postData,
-														headers = str(rq.headers)[:10000] if rq.headers !=None else rq.headers
-														)
+			try:
+				req_url = rq.url
+				req_domain =  '.'.join(tldextract.extract(req_url)[1:]) 
+				req_info = phish_db_schema.Page_Request_Info(request_url = req_url, 
+															request_domain = req_domain, 
+															request_method = rq.method, 
+															request_type = rq.resourceType
+															,req_id = rq._requestId,
+															post_data = rq.postData[:1990] if rq.postData !=None else rq.postData,
+															headers = str(rq.headers)[:10000] if rq.headers !=None else rq.headers
+															)
 
-		
-			# phish_db_layer.add_page_req_info(req_info)
-			# print(rq.url,rq.postData)
-			page_requests.append(req_info)
+			
+				# phish_db_layer.add_page_req_info(req_info)
+				# print(rq.url,rq.postData)
+				page_requests.append(req_info)
+			except:
+				pass
 		
 		log_request_details(req)
-
-		
-		
-		### log details of requests involved in the redirections
-		for r in req.redirectChain:
-			log_request_details(r)
 		
 		await req.continue_()
+
+		### log details of requests involved in the redirections
+		for r in req.redirectChain:			
+			log_request_details(r)
+			
 
 	async def handle_response(res ):
 		###
@@ -486,7 +405,10 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 		form_id=''
 		try:
 			frame = get_frame(frameIndex, pup_page)
-			await frame.waitFor(field_selector)
+			try:
+				await frame.waitFor(field_selector)
+			except:
+				pass
 			field = await frame.J(field_selector)
 			try:
 				form = await frame.Jeval(field_selector, "(el)=>{ return el.form.name }")
@@ -532,7 +454,8 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 				### Type the value in the field 
 				if field !=None and await field.isIntersectingViewport(): 
 					await reset_element(field, pup_page, field_selector)							
-					print('typing value ::', element.element_value)					
+					print('typing value ::', element.element_value)	
+					# print(field)				
 					await field.focus()
 					await field.type(element.element_value)
 					time.sleep(3)
@@ -605,8 +528,8 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 				path= path+"/"+str(count)+'_'+str(page_count)+'_screenshot.png';
 				
 				try:
-					await pup_page.screenshot({'path': path})#, 'fullPage':True})
-					await pup_page.screenshot({'path': path_slice})#, 'fullPage':True})
+					await pup_page.screenshot({'path': path, 'fullPage':True})
+					await pup_page.screenshot({'path': path_slice, 'fullPage':True})
 				except Exception as e:
 					print(e)
 
@@ -621,20 +544,20 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 				page_url = tldextract.extract(curr_url)  
 
 				### Get title of the page
-				time.sleep(3)							
-				title = await pup_page.evaluate(js_targeted_brands)
+					
+				await pup_page.addScriptTag({'content': extra_scripts.js_dom_scripts})
+				time.sleep(5)						
+				title = await pup_page.evaluate("()=>get_title()")
 				print('Crawling Page :: ',loop_count, ' :: ' , title)
 
 							
 				### Get DOM details of the page
-				await pup_page.addScriptTag({'content': js_domelements_position})
-				res = await pup_page.evaluate("()=> get_elements(document, -1)")
 				
+				res = await pup_page.evaluate("()=> get_elements(document, -1)")
 				### Add Gremlin script to the page to be used later  
 				await pup_page.addScriptTag({'url': 'https://unpkg.com/gremlins.js' })
 
 				### Execute Script to override window open
-				await pup_page.addScriptTag({'content': js_override_window_open})
 				await pup_page.evaluate("()=>w_override(window,window.open)")
 
 				### Clear any overlays by clicking on all buttons
@@ -642,12 +565,14 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 					await clear_overlays()	
 
 				### Get DOM tree to keep track of changes to the DOM
-				dom_tree= await pup_page.evaluate(js_elements_tree)	
+				dom_tree= await pup_page.evaluate("()=>get_dom_tree()")	
 				# print(dom_tree)
 				
 				### Append page details to site
-				page = phish_db_schema.Pages(site_id = site_obj.site_id ,page_url = curr_url,page_title = title, page_image_id = str(count)+"_"+str(page_count)+'_screenshot.png')		
+				page_image_det = str(count)+"_"+str(page_count)+'_screenshot.png'
+				page = phish_db_schema.Pages(site_id = site_obj.site_id ,page_url = curr_url,page_title = title, page_image_id = page_image_det)		
 				page.requests = page_requests
+				# print(page_requests)
 				page.responses = page_responses		
 				page.dom_hash = get_dom_hash(dom_tree)
 				print(page.dom_hash)
@@ -673,13 +598,17 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 					return
 
 				
-				
-				await get_noninput_elements(path_slice)
+				### Executes JS to detect known captchas and logs them
+				await detect_known_captcha(page_image_det)
 
+				### Identifies and takes screenshot of possible captcha elements
+				await get_noninput_elements(path_slice)
+			
 				temp = dom_tree
 				form = None
 				form_id = None
 				
+				# print(res)
 				### Parse and Categorize each elements in the page
 				page = parse_elements(res,path_slice,page)
 				is_submit_success = False

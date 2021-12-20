@@ -222,7 +222,8 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 				await pup_page.waitForNavigation({'waituntil':'networkidle2','timeout':15000})
 			except Exception as ex:
 				print('navigation timeout!!!')
-				
+
+			await pup_page.addScriptTag({'content':extra_scripts.js_dom_scripts})
 			dom_tree= await pup_page.evaluate("()=>get_dom_tree()") 			
 			print('is_navigate_success ::' , temp!=dom_tree)
 			# print(dom_tree)
@@ -286,31 +287,18 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 				
 
 
-	async def detect_known_captcha(page_image_id ):
+	async def detect_known_captcha(page_image_det ):
+
 		try:
+			### add all JS scripts to detect the presence sof captchas
 			await pup_page.addScriptTag({'content':extra_scripts.js_captchas})
-			captcha_details = await pup_page.evaluate("""()=> findRecaptchaClients()""")
-			# print(captcha_details)
-			if captcha_details:
-				cap_info = phish_db_schema.Captcha_Info( page_image_id = page_image_det, 
-														captcha_details = str(captcha_details)
-													   )
-				phish_db_layer.add_captcha_info(cap_info)
 
-			captcha_details = await pup_page.evaluate("""()=> find_hcaptcha()""")
-			# print(captcha_details)
-			if captcha_details:
+			captcha_methods = [" findRecaptchaClients()", " find_recaptcha()", " find_hcaptcha()", " find_keycaptcha()"]
+			for cm in captcha_methods:
+				captcha_details = await pup_page.evaluate("""()=>"""+cm)
 				cap_info = phish_db_schema.Captcha_Info( page_image_id = page_image_det, 
 														captcha_details = str(captcha_details)
-													   )
-				phish_db_layer.add_captcha_info(cap_info)
-
-			captcha_details = await pup_page.evaluate("""()=> find_keycaptcha()""")
-			# print(captcha_details)
-			if captcha_details:
-				cap_info = phish_db_schema.Captcha_Info( page_image_id = page_image_det, 
-														captcha_details = str(captcha_details)
-													   )
+														)
 				phish_db_layer.add_captcha_info(cap_info)
 		except:
 			pass
@@ -341,12 +329,14 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 				pass
 		
 		log_request_details(req)
-		
-		await req.continue_()
 
 		### log details of requests involved in the redirections
 		for r in req.redirectChain:			
 			log_request_details(r)
+
+		await req.continue_()
+
+		
 			
 
 	async def handle_response(res ):
@@ -375,8 +365,8 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 			# Generate hash of requested file
 			hasher = hashlib.sha1()
 			with open(file_path, 'rb') as afile:
-			    buf = afile.read()    
-			    hasher.update(buf)
+				buf = afile.read()    
+				hasher.update(buf)
 			digest = hasher.hexdigest()			
 		except Exception as e:
 			logger.info('handle_response: Exception!! ::'+res.url+' :: '+str(e))
@@ -392,7 +382,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 
 	async def is_field_visible(el):
 		l,t,r,b = map(float,el.element_position.split(';'))
-		if (r-l>0 and b-t >0) or await el.isIntersectingViewport():
+		if (r-l>0 and b-t >0):
 			return True
 		return False
 
@@ -510,7 +500,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 	try:
 		loop_count=0
 		### Different methods to submit the data , prioritized from specific method to more generalized
-		SUBMIT_METHODS = ['button', 'submit_button', 'form_name', 'form_id',  'canvas_click','path_click', 'enter_submit']#, 'gremlin_clicks' ] 
+		SUBMIT_METHODS = ['button', 'submit_button', 'form_name', 'form_id',  'canvas_click', 'path_click', 'input_image', 'enter_submit']#, 'gremlin_clicks' ] 
 		SUBMIT_BUTTON_INDEX =-1
 		### Parse and Interact with the pages
 		while loop_count<20:
@@ -602,7 +592,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 				await detect_known_captcha(page_image_det)
 
 				### Identifies and takes screenshot of possible captcha elements
-				await get_noninput_elements(path_slice)
+				# await get_noninput_elements(path_slice)
 			
 				temp = dom_tree
 				form = None
@@ -704,6 +694,16 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 								print('Path::  Hover over and click!!')
 								await field_submit[0].hover()								
 								await field_submit[0].click()
+								is_submit_success =  await is_navigate_success()
+							else:
+								sub_method = SUBMIT_METHODS.index(sub_method)+1
+
+						if sub_method == 'input_image':
+							field_submit = await pup_page.JJ('input[type="image"]')
+
+							if len(field_submit) > 0:								
+								print('Path found!! To be  clicked!!')
+								await field_submit[0].click()								
 								is_submit_success =  await is_navigate_success()
 							else:
 								sub_method = SUBMIT_METHODS.index(sub_method)+1

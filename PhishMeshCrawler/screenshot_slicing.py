@@ -28,14 +28,15 @@ def img_to_text(image_file,typ, x1, y1, x2, y2, zoom_factor=2):
 		draw.rectangle(((x1,y1),(x2,y2)), outline = "red")
 		img = img_slice_and_zoom(image_file,typ, x1, y1, x2, y2,zoom_factor)
 		text = img_ocr(img)
+		
 		#print('screenshot:', text)
-		if '/' in text:
+		if text!=None and '/' in text:
 			text = text.replace('/','-')
 		img_slice = Image.open(img)
 		img_name = remove_file_extension(img)
 		img_ext = img_slice.format.lower()
 		text = text.encode('ascii','ignore').decode() #text.decode('unicode_escape').encode('ascii','ignore')
-		ocr_slice_file = img_name+'-'+text+'.'+img_ext
+		ocr_slice_file = img_name+'-'+text[:20]+'.'+img_ext
 		img_slice.save(ocr_slice_file)
 		#text = spell_check(text.decode('unicode_escape').encode('ascii','ignore')+" autocorect")
 		#return text[0:text.index("auto")];
@@ -80,7 +81,7 @@ def img_slice_and_zoom(image_file,typ, x1, y1, x2, y2, zoom_factor=2):
 		s = img.crop((x1,y1,x2,y2))
 		slice_info = "slice:_%s--%s-%s-%s-%s" % (str(typ),x1,y1,x2,y2)
 		slice_file = img_name+'-'+slice_info+'.'+img_ext
-
+		# print(slice_info)
 		szoom = s
 		szoom_file = slice_file
 		if (zoom_factor > 0) : 
@@ -102,10 +103,8 @@ def img_ocr(image_file):
 		im = im.filter(ImageFilter.MedianFilter())
 		enhancer = ImageEnhance.Contrast(im)
 		im = enhancer.enhance(1)
-		#im = im.convert('1')
 		text=''
 		text = pytesseract.image_to_string(im)
-		#print('img2ocr ::', text)
 		im.save(image_file)
 		return text
 	except Exception as e:

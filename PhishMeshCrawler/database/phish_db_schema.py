@@ -239,6 +239,13 @@ class Captcha_Info(base):
   page_image_id = Column(String(50))
   captcha_details = Column(String(1000))
 
+class PaloUrl_Status(base):
+  __tablename__ = 'tbl_PaloUrlStatus'
+  status_id = Column(Integer, primary_key = True)
+  url = Column(String(10000))
+  site_id = Column(Integer)
+  category = Column(String(1000))
+
 if __name__ == '__main__':
 
   # DB_CONN_SERVER = DB_CONN_SERVER

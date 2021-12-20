@@ -33,6 +33,15 @@ js_captchas = """
                         return [];
                     }
                     
+                    function find_recaptcha(){
+                        var captcha_el = document.getElementsByClassName('recaptcha')
+                        if (captcha_el!=null && captcha_el.length>0){
+                            if( captcha_el[0].hasAttribute('data-sitekey'))
+                                return {'sitekey':  captcha_el[0].getAttribute('data-sitekey')}
+                        }
+                        return {}
+                    }
+
                     function find_hcaptcha(){
                         var captcha_el = document.getElementsByClassName('h-captcha')
                         if (captcha_el!=null && captcha_el.length>0){

@@ -13,7 +13,7 @@ from config.phish_db_config import *
 
 logger = Phish_Logger.get_phish_logger('phish_db_layer.py')
 
-db = create_engine(DB_CONN_SERVER)
+db = create_engine(DB_CONN_SERVER, pool_size=30, max_overflow=0)
 
 # db.echo = True
 
@@ -110,6 +110,25 @@ def add_captcha_info(captcha_obj):
     # print('seesion committed')
     session.close()
   except Exception as e:
+    logger.info('Exception occured in add_captcha_info: '+str(e))
+
+  
+def add_palourl_status(status_obj):
+  try:
+    session = create_db_session()
+    # print(status_obj.url)
+    site =session.query(Sites).filter(text("site_url='"+str(status_obj.url)+"'")).first()
+    if site !=None:
+      status_obj.site_id = site.site_id
+    st_obj =session.query(PaloUrl_Status).filter(text("url='"+str(status_obj.url)+"'")).first()
+    if site !=None:
+      return
+    session.add(status_obj)
+    session.commit()
+    # print('seesion committed')
+    session.close()
+  except Exception as e:
+    print(e)
     logger.info('Exception occured in add_captcha_info: '+str(e))
 
 def add_page_info(page_obj):
@@ -532,7 +551,7 @@ def fetch_gsb_urls():
   try:
     session = create_db_session()
     phish_urls = []
-    for s in session.query(Open_Phish_Links).all():
+    for s in session.query(Open_Phish_Links).order_by(Open_Phish_Links.recorded_datetime.desc()).all():
       a = Open_Phish_Links(open_phish_link_id = s.open_phish_link_id, open_phish_url = s.open_phish_url)
       phish_urls.append(a)
     session.commit()

@@ -486,7 +486,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 		return hasher.hexdigest()
 
 	### Intercept and handle requests and responses from the pages
-	await pup_page.setRequestInterception(True)
+# 	await pup_page.setRequestInterception(True)
 	pup_page.on('request', lambda req: asyncio.ensure_future(handle_request(req)))
 	pup_page.on('response',  lambda res: asyncio.ensure_future(handle_response(res)))
 

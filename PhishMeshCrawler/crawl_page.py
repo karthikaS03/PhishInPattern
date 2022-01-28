@@ -15,6 +15,7 @@ import MNB_field_classifier
 import tldextract
 import argparse
 import extra_scripts
+import json
 
 dir_path = os.path.abspath(os.path.dirname(__file__))
 dir_path = dir_path +'/../../data'
@@ -193,7 +194,7 @@ async def reset_element(element, page, field_selector):
 		
 		logger.info('reset_element(): Exception!!') 
 
-async def crawl_web_page(phish_url,site_obj, phish_id=-1):
+async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 
 	browser = await launch({ 'headless':False, 
 							 'ignoreHTTPSErrors':True, 
@@ -212,9 +213,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 	temp = None 
 	samePage = 0
 	count=phish_id
-	res_count = 1
 	page_count=0
-	site_pages =[]
 	page_requests = []
 	page_responses = []
 
@@ -289,7 +288,37 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 			if el['tag'] not in ignore_tags and el['size']>5000 and dim!=None and dim[4]<150 and  el['class']=='survey_button':			
 				txt = screenshot_slicing.img_to_text(screenshot_path, 'captcha_'+str(el['pos'])+'_'+str(el['size'])+'_'+el['tag'], dim[0], dim[2], dim[1], dim[3] , 3)
 				
+	async def get_event_listeners() :
 
+		session = await pup_page.target.createCDPSession()
+
+		# Evaluate query selector in the browser
+		res = await session.send('Runtime.evaluate', {
+		"expression" : "document.querySelectorAll('*')"
+		})
+		# print( res)
+		# Using the returned remote object ID, actually get the list of descriptors
+		result = await session.send('Runtime.getProperties', {'objectId' : res['result']['objectId']}) ; 
+		
+		# print(result['result'])
+		# Filter out functions and anything that isn't a node
+		descriptors= list(filter(lambda x:  x.get('value', None) != None and x['value'].get('objectId', None) !=None and x['value'].get('className',None) != 'Function' , result['result']))
+		# print(descriptors)
+
+		elements = []
+
+		for descriptor  in descriptors:
+			objectId = descriptor['value']['objectId']
+
+			## Add the event listeners, and description of the node (for attributes)
+			all_listeners = await session.send('DOMDebugger.getEventListeners', {'objectId' : objectId })
+			node_desc = await session.send('DOM.describeNode', { 'objectId' : objectId })
+			if len(all_listeners['listeners']) > 0:
+				elements.append({'node' : node_desc['node'], 'listeners': all_listeners['listeners'] })
+			# print(node_desc, all_listeners)
+
+			# elements.append(descriptor)
+		return elements
 
 	async def detect_known_captcha(page_image_det ):
 
@@ -339,9 +368,6 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 			log_request_details(r)
 
 		await req.continue_()
-
-		
-			
 
 	async def handle_response(res ):
 		###
@@ -498,6 +524,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 	except Exception as e:
 		print(e)
 
+	
 
 	org_url = tldextract.extract(phish_url)
 	is_run_complete = False 
@@ -546,9 +573,17 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 				print('Crawling Page :: ',loop_count, ' :: ' , title)
 
 							
-				### Get DOM details of the page
-				
+				### Get DOM details of the page				
 				res = await pup_page.evaluate("()=> get_elements(document, -1)")
+
+				### Get DOM Event Listeners of the page				
+				event_listeners = await get_event_listeners()
+				with open(dir_path+'/'+str(count)+'_'+str(page_count)+'_listeners.json', 'w') as lf:
+					json.dump(event_listeners, lf,  indent = 2)
+
+				# ev_listeners = await pup_page.evaluate("()=> getElementEventsAndCoordinates()")
+				# print(ev_listeners)
+
 				### Add Gremlin script to the page to be used later  
 				await pup_page.addScriptTag({'url': 'https://unpkg.com/gremlins.js' })
 
@@ -565,13 +600,13 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 				
 				### Append page details to site
 				page_image_det = str(count)+"_"+str(page_count)+'_screenshot.png'
-				page = phish_db_schema.Pages(site_id = site_obj.site_id ,page_url = curr_url,page_title = title, page_image_id = page_image_det)		
+				page = phish_db_schema.Pages(site_id = site_obj.site_id ,page_url = curr_url, page_title = title, page_image_id = page_image_det)		
 				page.requests = page_requests
-				# print(page_requests)
+				
 				page.responses = page_responses		
 				page.dom_hash = get_dom_hash(dom_tree)
-				print(page.dom_hash)
-
+				
+				print(page.page_title, page.page_image_id)
 				site_pages.append(page)
 
 				### Continue execution even when page navigated to a different domain
@@ -583,7 +618,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 				time.sleep(5)
 
 				### Check if the DOM structure is same as the previously visited page
-				samePage = samePage+1 if temp==dom_tree else 0;
+				samePage = samePage+1 if temp==dom_tree else 0
 
 				### If the same page was visited 3 times, then stop execution  		
 				if samePage >= 3:
@@ -643,7 +678,8 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 								continue
 							break
 
-						if sub_method == 'form_name':
+						if sub_method == 'form_name' and form != None:
+							
 							field_submit = await pup_page.JJ('form[name="'+form+'"]')
 							if len(field_submit)>0:								
 								logger.info('crawl_page_info(%s,%s): Form Submitted by Name  :: (%s) ' %(str(count), curr_url, form ))
@@ -653,9 +689,9 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 							else:
 								sub_method = SUBMIT_METHODS.index(sub_method)+1
 
-						if sub_method == 'form_id':
-							field_submit = await pup_page.JJ('form[id="'+form_id+'"]')
-							
+						if sub_method == 'form_id' and form_id != None:
+
+							field_submit = await pup_page.JJ('form[id="'+form_id+'"]')							
 							if len(field_submit)>0:								
 								logger.info('crawl_page_info(%s,%s): Form Submitted by Id  :: (%s) ' %(str(count), curr_url, form_id ))
 								await pup_page.Jeval('form[id="'+form_id+'"]', "(fm) =>{fm.submit();}") 
@@ -664,6 +700,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 								sub_method = SUBMIT_METHODS.index(sub_method)+1
 
 						if sub_method == 'submit_button':
+
 							field_submit = await pup_page.JJ('input[type="submit"]')
 							if len(field_submit) > 0:								
 								btn_pos = await field_submit[0].boundingBox()	
@@ -675,12 +712,14 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 								sub_method = SUBMIT_METHODS.index(sub_method)+1
 
 						if sub_method == 'enter_submit':							
+
 							time.sleep(5)							
 							logger.info('crawl_page_info(%s,%s): Submitted by Enter ' %(str(count), curr_url ))
 							await pup_page.keyboard.press('Enter')
 							is_submit_success =  await is_navigate_success()
 							
 						if sub_method == 'canvas_click':
+
 							field_submit = await pup_page.JJ('canvas')
 
 							if len(field_submit) > 0:								
@@ -742,7 +781,7 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 						logger.info('crawl_page_info(%s,%s): Successfully submitted via %s ' %(str(count), curr_url, sub_method))
 						break
 
-				### Saving a screenshot of the current page after entering field values
+				### Saving a screenshot of the current page after submitting
 				if not os.path.exists(path):
 					os.makedirs(path)
 				path = dir_path+'/images/'+str(count)+"/"+str(count)+'_'+str(page_count)+'_processed_screenshot.png'
@@ -766,30 +805,34 @@ async def crawl_web_page(phish_url,site_obj, phish_id=-1):
 				print('Exception Occured',e)
 			
 	finally:
-		await browser.close()
-		print('Browser Closed!!!')
 		if not is_run_complete:
 			phish_db_layer.add_pages_to_site(site_obj.phish_tank_ref_id ,site_pages, phish_url)
+		
+		await browser.close()
+		print('Browser Closed!!!')
 
-async def main(url, phish_id, time_out=900):
 
-	try:
-		site_obj = phish_db_schema.Sites(site_url = url, phish_tank_ref_id = phish_id)
+async def main(url, phish_id, time_out=600):
+	site_pages =[]
+	site_obj = phish_db_schema.Sites(site_url = url, phish_tank_ref_id = phish_id)
+	try:		
 		site_obj = phish_db_layer.add_site_info(site_obj)
-		# site_obj.site_id = -123
-		print(site_obj)		
+
 		# Starts the crawling process with a execution timeout
-		await asyncio.wait_for( crawl_web_page(url, site_obj, phish_id), timeout = time_out)
+		await asyncio.wait_for( crawl_web_page(url, site_obj, site_pages,  phish_id), timeout = time_out)
 	except asyncio.TimeoutError:
 		print('timeout')
+		phish_db_layer.add_pages_to_site(site_obj.phish_tank_ref_id ,site_pages, url)
+		
 
 
 parser = argparse.ArgumentParser(description="Crawl phishing links")
 parser.add_argument('url', type=str, help= "URL to crawl")
-parser.add_argument('--phish_id', default=-1, help="Unique id from phishtank database(optional)" )
+parser.add_argument('--phish_id', default=-101 , help="Unique id from phishtank database(optional)" )
 parser.add_argument('--timeout', default=600, help="Time duration after which the program will terminate" )
 
 if __name__ == '__main__':
 	args = parser.parse_args()
-	print(args.url, args.phish_id, args.timeout)
+	# print(args.url, args.phish_id, args.timeout)
 	asyncio.get_event_loop().run_until_complete(main(args.url, args.phish_id, args.timeout))
+

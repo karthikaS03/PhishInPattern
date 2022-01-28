@@ -31,9 +31,6 @@ import pandas as pd
 from nltk import everygrams
 import enchant
 from sklearn import metrics
-from matplotlib import pyplot as plt
-import numpy as np
-import seaborn as sns
 import random
 from sklearn.naive_bayes import GaussianNB
 dir_path = os.path.abspath(os.path.dirname(__file__))
@@ -66,25 +63,6 @@ def token_cleaning(sentence):
     res_sentences.append(((sentence + ' '+sent).lower()+' ')*5)
     return res_sentences
 
-def plot_confusion_matrix(data, labels, output_filename):
-
-    sns.set(color_codes=True)
-    plt.figure(1, figsize=(9, 6))
- 
-    plt.title("Confusion Matrix")
- 
-    sns.set(font_scale=1.4)
-    ax = sns.heatmap(data, annot=True, cmap="YlGnBu", cbar_kws={'label': 'Scale'})
- 
-    ax.set_xticklabels(labels)
-    ax.set_yticklabels(labels)
-    plt.yticks(rotation=0)
-    plt.xticks(rotation=90)
-    ax.set(ylabel="True Label", xlabel="Predicted Label")
-    plt.tight_layout()
-    plt.show()
-    # plt.savefig(output_filename, bbox_inches='tight', dpi=300)
-    # plt.close()
 
 def fetch_field_training_set():
 

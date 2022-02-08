@@ -328,6 +328,9 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 			# print(node_desc, all_listeners)
 
 			# elements.append(descriptor)
+		with open(dir_path+'/'+str(count)+'_'+str(page_count)+'_listeners_old.log', 'w') as lf:
+			json.dump(elements, lf, indent=2) 
+
 		return elements
 
 	async def detect_known_captcha(page_image_det ):
@@ -524,6 +527,9 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 
 	async def get_event_listeners():
 
+		### to compre if we are missing listeners
+		await get_event_listeners_old()
+
 		all_listeners = []
 		for i,f in enumerate(pup_page.frames):
 			print('frame processed')                
@@ -537,9 +543,10 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 
 	async def log_events_helper(log):
 		
-		with open(dir_path+'/'+str(count)+'_'+str(page_count)+'_events.log', 'a') as lf:
-				txt = "[CONSOLE LOG][{}] :: {}\n".format(datetime.now().strftime("%m/%d/%Y--%H:%M:%S"), log.text)
-				lf.write(txt)
+		if 'KEYLOG' in log.text:
+			with open(dir_path+'/'+str(count)+'_'+str(page_count)+'_events.log', 'a') as lf:
+					txt = "[CONSOLE LOG][{}] :: {}\n".format(datetime.now().strftime("%m/%d/%Y--%H:%M:%S"), log.text)
+					lf.write(txt)
 	
 	async def interact_captcha(result):
 

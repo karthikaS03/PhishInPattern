@@ -125,7 +125,7 @@ def pickle_data(test = False):
         
         print(metrics.classification_report(y_test, y_pred, target_names=samples))
         acc_score = metrics.accuracy_score(y_test,y_pred)
-        print('Accuracy Score :: ', acc_score)
+        # print('Accuracy Score :: ', acc_score)
         cm = metrics.confusion_matrix([samples[x] for x in y_test], [samples[x] for x in y_pred], labels = samples)
         plot_confusion_matrix(cm, samples, 'c.png')
     cl_pickle = open(os.path.join(dir_path,"category.pickle"),"wb")
@@ -144,7 +144,7 @@ def classify(text):
         t_set = phish_db_layer.get_categories() #set([t['category'] for t in fetch_field_training_set()]) #
         samples =[e for e in t_set]
         samples.sort()
-        print(samples)
+        # print(samples)
     cl_pickle = open(os.path.join(dir_path,"category.pickle"),"rb")
     nb = pickle.load(cl_pickle)
     cl_pickle.close()
@@ -160,18 +160,18 @@ def classify(text):
     # print (samples)
     result = samples[y_pred[0]]
 
-    print(text)
+    # print(text)
     if 'captcha' in text.lower():        
         result = "Captcha"
     elif 'sms' in text.lower() or '2FA' in text:
         result = 'sms'
     
-    print(result, X_test[0], y_pred_prob[0])
+    # print(result, X_test[0], y_pred_prob[0])
 
     if result.lower() in X_test[0].lower():        
         return result, y_pred_prob[0]
     elif y_pred_prob[0]*100 <40:
-        print ("low probability")
+        # print ("low probability")
         return "", 0
 
     return result, y_pred_prob[0]
@@ -212,7 +212,7 @@ def test_real_samples():
     nb = pickle.load(cl_pickle)
     cl_pickle.close()
 
-    print(nb.classes_)
+    # print(nb.classes_)
     t_set = phish_db_layer.get_categories() #set([t['category'] for t in fetch_field_training_set()]) #phish_db_layer.get_categories()
     samples =[e for e in t_set]
     samples.sort()
@@ -224,7 +224,7 @@ def test_real_samples():
     df_test = df_test[df_test['Target'].notna()]
     df_test['Target'] = df_test['Target'].apply(lambda x: x.lower())
     df_test = df_test.fillna('')
-    print(df_test.describe())
+    # print(df_test.describe())
     
     pred = []
     for i,row in df_test.iterrows():
@@ -235,14 +235,14 @@ def test_real_samples():
             res = 'username'
         # print(row['element_parsed_text'], res)
         pred.append(res.lower())
-    print(set(pred))
+    # print(set(pred))
     labels = list(set(df_test['Target'].tolist()).union(set(pred)))
     acc_score = metrics.accuracy_score(df_test['Target'],pred)
     cm = metrics.confusion_matrix(df_test['Target'], pred, labels = labels)
     # print(cm)
     plot_confusion_matrix(cm, labels, 'c.png')
     
-    print('Accuracy Score ::', acc_score)
+    # print('Accuracy Score ::', acc_score)
     df_test['Predecited'] = pred
     df_test.to_csv('test_results.csv')
 

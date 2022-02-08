@@ -105,9 +105,10 @@ def process_urls_parallel(analysis_urls, script_file, cont_timeout, max_cont):
 
 def stop_running_containers():
 	for c in client.containers.list():
-		print (c)			
-		c.stop()
-		c.remove()
+		if 'Phish' in c.name:
+			print (c.name)			
+			c.stop()
+			c.remove()
 
 def fetch_urls_from_db(count=0):
 	if count>0:
@@ -173,7 +174,7 @@ def process_phishing_urls():
 
 		
 def main():
-	# stop_running_containers()
+	stop_running_containers()
 	'''
 	prune unused removed containers
 	'''

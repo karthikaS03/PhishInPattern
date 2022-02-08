@@ -262,10 +262,7 @@ js_event_scripts =  """
                     }
 
                     function log_events_helper(event){
-                        console.log(JSON.stringify(get_node_details(event.target)), event.type)
-                        event.preventDefault()
-                        event.stopPropagation()
-                        event.stopImmediatePropagation()
+                        console.log("KEYLOG :: ", JSON.stringify(get_node_details(event.target)), event.type)
                     }
 
                     function listAllEventListeners() {

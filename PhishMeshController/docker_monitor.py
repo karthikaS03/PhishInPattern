@@ -112,6 +112,10 @@ def export_container_logs(id,count):
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
             
+        dir_path = dir_path + export_path+'container_'+id+'/'
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+            
         with open(dir_path+'data.tar', 'wb') as f:
             bits, stat = container.get_archive('/home/pptruser/data/')
             for chunk in bits:

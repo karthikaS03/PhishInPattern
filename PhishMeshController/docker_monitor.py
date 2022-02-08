@@ -4,6 +4,8 @@ import time
 import datetime
 from docker_config import *
 import sys
+from datetime import date
+
 # sys.path.append("../SWSec_Analysis/database")
 
 # import db_operations
@@ -24,12 +26,12 @@ def get_time():
 	currentDT = datetime.datetime.now()
 	return '['+currentDT.strftime("%Y-%m-%d %H:%M:%S") +'] '
 
-def initiate_container(url, id, script_name, iteration_count,  container_timeout):	
+def initiate_container(url, id, script_name, iteration_count,  container_timeout):	# add .port
     try:
         ## create and setup container ##
         get_logger('container_'+id, 1).info(get_time() + 'container_'+id+' creating!!')
         container_id  = client.containers.create(image=docker_image,name='container_'+id,volumes = vols,
-                                                shm_size='1G', user=docker_user, network='phishpro-network',
+                                                shm_size='1G', user=docker_user, #ports = {'8080':port} ,  # network='phishpro-network'
                                                 publish_all_ports=True, detach=False)
         container = client.containers.get('container_'+str(id))
         container.start()
@@ -82,7 +84,7 @@ def remove_containers():
         try:
             for c in client.containers.list():
                 # print(c.name)
-                if 'Phish' in c.name:
+                if 'phish' in c.name:
                     # print('Removing')
                     c.stop()
                     c.remove()
@@ -105,7 +107,8 @@ def export_container_logs(id,count):
         print('Exporting Container :: '+id)
         container = client.containers.get('container_'+str(id))
         get_logger('container_'+id).info(get_time() + 'container_'+id+'exporting files!!')
-        dir_path = export_path+'container_'+id+'/'
+        # dir_path = export_path+'container_'+id+'/'
+        dir_path = os.path.join(export_path,date.today().strftime("%Y%m%d"))
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
             
@@ -131,8 +134,9 @@ def docker_prune():
 
 
 def test():
-    # remove_containers()
-    initiate_container('https://semantic-ui.com/examples/login.html','phishmesh_teste3', 'crawl_page.py','0', 600 )   
+    remove_containers()
+    initiate_container('https://recaptcha-demo.appspot.com/recaptcha-v2-checkbox.php','phishmesh_test32', 'test_captcha_click.py','0', 600, '8083' )   
+    initiate_container('https://recaptcha-demo.appspot.com/recaptcha-v2-checkbox.php','phishmesh_test322', 'test_captcha_click.py','0', 600 , '8085') 
    
    
     

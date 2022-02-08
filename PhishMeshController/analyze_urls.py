@@ -12,6 +12,7 @@ sys.path.append('/home/sk-lab/Desktop/PhishProDetector/PhishMeshCrawler/')
 from database import phish_db_layer, phish_db_schema
 from docker_config import *
 from docker_monitor import *
+from datetime import timedelta
 
 client = docker.from_env()
 
@@ -125,13 +126,14 @@ def fetch_urls_from_db(count=0):
 
 
 def fetch_from_file():
-	urls_path = '../data/openphish_links.csv'  # '../data/phishing_dumps/csv/12092021.csv'
+	urls_path =  '../data/phishing_dumps/csv/phishing_seen_recently_{}.csv'.format((datetime.today()-timedelta(1)).strftime('%d%m%Y'))
+ #'../data/phishing_dumps/csv/phishing_seen_recently_22102021.csv' # '../data/openphish_links.csv'  
 
 	crawl_urls = {}
 	if '.csv' in urls_path:		
 		with open(urls_path) as cf:
 			csvreader = csv.DictReader(cf, delimiter=',')
-			i = 1502
+			i = 1
 			for row in csvreader:
 				# print(row)
 				if 'openphish' in urls_path:
@@ -162,16 +164,16 @@ def fetch_from_file():
 
 def process_phishing_urls():	
 	while True:
-		phish_urls  =   fetch_urls_from_db(max_containers) #fetch_urls_from_db(max_containers) #fetch_from_file() #
+		phish_urls  =   fetch_from_file() #fetch_urls_from_db(max_containers) #fetch_from_file() #
 		processed_ids = process_urls_parallel(phish_urls, collection_script, container_timeout, max_containers)		
 		if len(client.containers.list())>30:
 			print('docker pruning started!!')
 			docker_prune()
-		# break
+		break
 
 		
 def main():
-	stop_running_containers()
+	# stop_running_containers()
 	'''
 	prune unused removed containers
 	'''

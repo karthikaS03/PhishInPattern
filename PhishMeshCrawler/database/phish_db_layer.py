@@ -72,7 +72,7 @@ def get_an_image_per_group():
     for site_group in session.query(Site_Groups).all():
       if len(site_group.site_images)>0:
       	images.append({'image_id':site_group.site_images[0].site_image_id, 'group_id': site_group.site_group})
-    return images
+    # return images
     session.commit()
     session.close()
   except Exception as e:

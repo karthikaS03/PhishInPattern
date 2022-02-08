@@ -731,6 +731,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 	
 	
 	### Intercept and handle requests and responses from the pages
+
 	# await pup_page.setRequestInterception(True)
 	# pup_page.on('request', lambda req: asyncio.ensure_future(handle_request(req)))
 	# pup_page.on('response',  lambda res: asyncio.ensure_future(handle_response(res)))
@@ -895,10 +896,10 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 		await browser.close()
 		print('Browser Closed!!!')
 
+
 async def main(url, phish_id, time_out=600):
 	site_pages =[]
 	site_obj = phish_db_schema.Sites(site_url = url, phish_tank_ref_id = phish_id)
-
 	try:		
 		site_obj = phish_db_layer.add_site_info(site_obj)
 
@@ -919,3 +920,4 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 	# print(args.url, args.phish_id, args.timeout)
 	asyncio.get_event_loop().run_until_complete(main(args.url, args.phish_id, args.timeout))
+

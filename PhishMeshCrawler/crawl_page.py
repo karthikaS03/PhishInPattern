@@ -550,7 +550,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 	
 	async def interact_captcha(result):
 
-		if result['result']!=None:
+		if result['result']!=None and len(result['result']['pred_classes'])>0:
 				### keep a log of all captcha detection results
 				with open(dir_path+'/'+str(count)+'_'+str(page_count)+'_captchas.log', 'w') as lf:
 					json.dump(result, lf, indent=2) 
@@ -585,7 +585,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 
 			im_64 = base64.b64encode(im_bytes).decode('utf8')
 			headers = {'Content-type':'application/json','Accept':'text/plain'}
-			payload = json.dumps({"image":im_64,"image_name":"16.png"})			
+			payload = json.dumps({"image":im_64,"image_name":image_path.split('/')[-1]})			
 			response = requests.post(api_url,data=payload, headers=headers)
 			result = response.json()
 			return result

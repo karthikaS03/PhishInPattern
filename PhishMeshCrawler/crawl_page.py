@@ -1,4 +1,5 @@
 
+from re import sub
 import sys
 # sys.setdefaultencoding('utf-8')
 import os
@@ -9,6 +10,7 @@ from pyppeteer import launch
 from phish_logger import Phish_Logger
 from database import phish_db_schema
 from database import phish_db_layer
+from datetime import datetime
 import page_element
 import time
 import MNB_field_classifier
@@ -16,6 +18,9 @@ import tldextract
 import argparse
 import extra_scripts
 import json
+import requests
+import base64
+import pyautogui
 
 dir_path = os.path.abspath(os.path.dirname(__file__))
 dir_path = dir_path +'/../../data'
@@ -182,14 +187,18 @@ async def reset_element(element, page, field_selector):
 			await element.focus()
 			# await  get_frame(element.element_frame_index, page).focus(field_selector)			
 			cnt = 0
+			# await page.keyboard.down('Control')
+			# await page.keyboard.press('A')
+			# await page.keyboard.up('Control')
+			# await page.keyboard.press('Backspace')
+			# await page.keyboard.press('Enter')
 			while cnt <= 50:
 				await element.press('Backspace')
 				cnt = cnt+1
-			# await page.keyboard.down('Control');
-			# await page.keyboard.press('A');
-			# await page.keyboard.up('Control');
-			# await page.keyboard.press('Backspace');
-			# await page.keyboard.press('Enter')
+			while cnt <= 50:
+				await element.press('Delete')
+				cnt = cnt+1
+			
 	except Exception as e:
 		
 		logger.info('reset_element(): Exception!!') 
@@ -203,7 +212,8 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 	                            '--disable-setuid-sandbox',                               
 	                            '--start-maximized',
 	                            '--ignore-certificate-errors',
-								'--ignore-certificate-errors-spki-list'
+								'--ignore-certificate-errors-spki-list',
+								 '--window-size=1366,768'
 	                           ]
 	                     })
 	 
@@ -219,7 +229,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 
 	async def is_navigate_success():
 		try:
-			# time.sleep(10)
+			# await asyncio.sleep(10)
 			# res = None
 			try:
 				await pup_page.waitForNavigation({'waituntil':'networkidle2','timeout':15000})
@@ -259,7 +269,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 								mogwais: [gremlins.mogwais.alert()]								
 							}).unleash() }"""
 							)
-		time.sleep(10)
+		await asyncio.sleep(10)
 
 	async def get_noninput_elements(screenshot_path): 
 
@@ -288,7 +298,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 			if el['tag'] not in ignore_tags and el['size']>5000 and dim!=None and dim[4]<150 and  el['class']=='survey_button':			
 				txt = screenshot_slicing.img_to_text(screenshot_path, 'captcha_'+str(el['pos'])+'_'+str(el['size'])+'_'+el['tag'], dim[0], dim[2], dim[1], dim[3] , 3)
 				
-	async def get_event_listeners() :
+	async def get_event_listeners_old() :
 
 		session = await pup_page.target.createCDPSession()
 
@@ -441,7 +451,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 			logger.info('get_field(%s,%s): Exception -> Failed getting field!! %s ;' %(str(field_selector), str(frameIndex), str(e)))
 			return None, '', ''
 							
-	async def input_values(curr_page, curr_url):
+	async def input_values(curr_page, curr_url, captcha_result):
 		###
 		### Iterate through each element and provide respective input
 		###
@@ -479,15 +489,14 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 					# print(field)				
 					await field.focus()
 					await field.type(element.element_value)
-					time.sleep(3)
+					await asyncio.sleep(3)
 					await get_frame(element.element_frame_index, pup_page).Jeval(field_selector, "(el)=>{ el.blur(); }")
-					time.sleep(3)
+					await asyncio.sleep(3)
 
 			except Exception as ve:
 				
 				logger.info('Input Value (%s,%s): Exception -> Failed on entering value ;%s' %(str(count), curr_url, str(ve)))
 		
-
 		dropdowns = await pup_page.JJ('select')
 
 		for i, dd in enumerate(dropdowns):
@@ -504,27 +513,239 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 			
 			if dd_selector!=None:
 				await pup_page.select(dd_selector, selected)
-			
+		
+		await interact_captcha(captcha_result)
+
 		return form, form_id
 
 	def get_dom_hash(d_tree):
 		hasher = hashlib.md5(d_tree.encode())
 		return hasher.hexdigest()
 
+	async def get_event_listeners():
+
+		all_listeners = []
+		for i,f in enumerate(pup_page.frames):
+			print('frame processed')                
+			await f.addScriptTag({'content':extra_scripts.js_event_scripts})
+			frame_listeners = await f.evaluate("()=> listAllEventListeners()")
+			all_listeners += frame_listeners
+			# print(frame_listeners)
+
+		with open(dir_path+'/'+str(count)+'_'+str(page_count)+'_listeners.log', 'w') as lf:
+			json.dump(all_listeners, lf, indent=2) 
+
+	async def log_events_helper(log):
+		
+		with open(dir_path+'/'+str(count)+'_'+str(page_count)+'_events.log', 'a') as lf:
+				txt = "[CONSOLE LOG][{}] :: {}\n".format(datetime.now().strftime("%m/%d/%Y--%H:%M:%S"), log.text)
+				lf.write(txt)
+	
+	async def interact_captcha(result):
+
+		if result['result']!=None:
+				### keep a log of all captcha detection results
+				with open(dir_path+'/'+str(count)+'_'+str(page_count)+'_captchas.log', 'w') as lf:
+					json.dump(result, lf, indent=2) 
+
+				### interact with the captchas
+				classes = result['result']['class_names']
+				for i,pos in enumerate(result['result']['pred_boxes']):
+					try:
+						if 'Captcha' in classes[i]:
+							print(pos)
+							print('***************** Captcha Found ***********************')
+							# await pup_page.mouse.click(pos[0] + 5, pos[1] + 5)
+							pyautogui.moveTo(pos[0] + 30, pos[1] + 220)
+							# pyautogui.dragTo(pos[0] + 30, pos[1] + 220 )
+							time.sleep(2)
+							## click nocaptcha
+							print('clicking on captcha')
+							pyautogui.click(pos[0] + 30, pos[1] + 220 )
+							await asyncio.sleep(2)
+					except Exception as ce:
+						print('Exception in captcha ::', ce )
+
+				pyautogui.press('esc')
+
+	async def detect_captcha_visual(image_path):
+		try:
+			api_url = "http://172.22.162.44:8905/detect_captcha2"
+			file_path = image_path
+			im_bytes = None
+			with open(file_path,'rb') as f:
+				im_bytes = f.read()
+
+			im_64 = base64.b64encode(im_bytes).decode('utf8')
+			headers = {'Content-type':'application/json','Accept':'text/plain'}
+			payload = json.dumps({"image":im_64,"image_name":"16.png"})			
+			response = requests.post(api_url,data=payload, headers=headers)
+			result = response.json()
+			return result
+		except:
+			pass
+
+	async def submit_page(page_det, curr_url, captcha_results):
+
+		
+		try:
+			is_submit_success = False
+			for sub_method in SUBMIT_METHODS:
+
+				print('Submitting method :: ', sub_method)
+				form, form_id = await input_values(page_det, curr_url, captcha_results)
+				await asyncio.sleep(5)
+				print('Entered input values!!')
+
+				try:
+					if sub_method == 'button':
+						field_buttons = await pup_page.JJ('button')
+						
+						for bt_ind, field_btn in enumerate(field_buttons):
+							btn_pos = await field_btn.boundingBox()		
+							await field_btn.focus()
+
+							if btn_pos!=None and btn_pos['width']>0 and btn_pos['height']>0 and  await field_btn.isIntersectingViewport():
+								try:					
+									logger.info('crawl_page_info(%s,%s): Button Clicked by Position :: (%s, %s, %s, %s) ' %(str(count), curr_url, str(btn_pos['x']), str(btn_pos['y']), str(btn_pos['width']), str(btn_pos['height'])))
+									await field_btn.click()   
+									is_submit_success =  await is_navigate_success()
+									if is_submit_success:
+										SUBMIT_METHODS.insert(0,sub_method)
+										# SUBMIT_BUTTON_INDEX = bt_ind 
+										break
+								except Exception as fe:
+									print(fe)
+								await pup_page.goto(curr_url, {'waitUntil':['networkidle2'],'timeout':900000 })
+								await input_values(page_det, curr_url, captcha_results)
+								print('Entered input values!!')	
+								await asyncio.sleep(5)
+						else:
+							continue
+						break
+
+					if sub_method == 'form_name' and form != None:
+						
+						field_submit = await pup_page.JJ('form[name="'+form+'"]')
+						if len(field_submit)>0:								
+							logger.info('crawl_page_info(%s,%s): Form Submitted by Name  :: (%s) ' %(str(count), curr_url, form ))
+
+							await pup_page.Jeval('form[name="'+form+'"]', "(fm) =>{fm.submit();}") 									
+							is_submit_success =  await is_navigate_success()
+						else:
+							sub_method = SUBMIT_METHODS.index(sub_method)+1
+
+					if sub_method == 'form_id' and form_id != None:
+
+						field_submit = await pup_page.JJ('form[id="'+form_id+'"]')							
+						if len(field_submit)>0:								
+							logger.info('crawl_page_info(%s,%s): Form Submitted by Id  :: (%s) ' %(str(count), curr_url, form_id ))
+							await pup_page.Jeval('form[id="'+form_id+'"]', "(fm) =>{fm.submit();}") 
+							is_submit_success =  await is_navigate_success()
+						else:
+							sub_method = SUBMIT_METHODS.index(sub_method)+1
+
+					if sub_method == 'submit_button':
+
+						field_submit = await pup_page.JJ('input[type="submit"]')
+						if len(field_submit) > 0:								
+							btn_pos = await field_submit[0].boundingBox()	
+							logger.info('crawl_page_info(%s,%s): Submit Button Clicked by Position :: (%s, %s, %s, %s) ' %(str(count), curr_url, str(btn_pos['x']), str(btn_pos['y']), str(btn_pos['width']), str(btn_pos['height'])))
+									
+							await field_submit[0].click()
+							is_submit_success =  await is_navigate_success()
+						else:
+							sub_method = SUBMIT_METHODS.index(sub_method)+1
+
+					if sub_method == 'enter_submit':							
+
+						await asyncio.sleep(5)							
+						logger.info('crawl_page_info(%s,%s): Submitted by Enter ' %(str(count), curr_url ))
+						await pup_page.keyboard.press('Enter')
+						is_submit_success =  await is_navigate_success()
+						
+					if sub_method == 'canvas_click':
+
+						field_submit = await pup_page.JJ('canvas')
+
+						if len(field_submit) > 0:								
+							btn_pos = await field_submit[0].boundingBox()	
+							logger.info('crawl_page_info(%s,%s): Canvas Clicked by Position :: (%s, %s, %s, %s) ' %(str(count), curr_url, str(btn_pos['x']), str(btn_pos['y']), str(btn_pos['width']), str(btn_pos['height'])))
+							await field_submit[0].click()							
+							await field_submit[0].hover()								
+							await field_submit[0].click()
+							is_submit_success =  await is_navigate_success()
+						else:
+							sub_method = SUBMIT_METHODS.index(sub_method)+1
+
+					if sub_method == 'path_click':
+						field_submit = await pup_page.JJ('path')
+
+						if len(field_submit) > 0:								
+							btn_pos = await field_submit[0].boundingBox()	
+							logger.info('crawl_page_info(%s,%s): Submit Button Clicked by Position :: (%s, %s, %s, %s) ' %(str(count), curr_url, str(btn_pos['x']), str(btn_pos['y']), str(btn_pos['width']), str(btn_pos['height'])))
+							await field_submit[0].click()							
+							await field_submit[0].hover()								
+							await field_submit[0].click()
+							is_submit_success =  await is_navigate_success()
+						else:
+							sub_method = SUBMIT_METHODS.index(sub_method)+1
+
+					if sub_method == 'input_image':
+						field_submit = await pup_page.JJ('input[type="image"]')
+
+						if len(field_submit) > 0:								
+							btn_pos = await field_submit[0].boundingBox()	
+							logger.info('crawl_page_info(%s,%s): Input Image Clicked by Position :: (%s, %s, %s, %s) ' %(str(count), curr_url, str(btn_pos['x']), str(btn_pos['y']), str(btn_pos['width']), str(btn_pos['height'])))
+							
+							await field_submit[0].click()								
+							is_submit_success =  await is_navigate_success()
+						else:
+							sub_method = SUBMIT_METHODS.index(sub_method)+1
+
+					if sub_method == 'gremlin_clicks':			
+				
+						await pup_page.evaluate("""() => { gremlins.createHorde({
+							species: [gremlins.species.clicker({clickTypes:['click','mousedown','mouseup', 'mousemove', 'dblclick']})],
+										
+							mogwais: [gremlins.mogwais.alert(),gremlins.mogwais.fps(),gremlins.mogwais.gizmo()],								
+							strategies: [gremlins.strategies.allTogether({delay: 500, nb: 1000 })]
+						}).unleash() }"""
+						)
+						await asyncio.sleep(5)
+							
+						logger.info('crawl_page_info(%s,%s): Submit by Gremlin Clicks ' %(str(count), curr_url))
+							
+						is_submit_success =  await is_navigate_success()
+						break
+
+				except Exception as se:
+					print(se)
+
+				if is_submit_success:
+					SUBMIT_METHODS.insert(0,sub_method)
+					logger.info('crawl_page_info(%s,%s): Successfully submitted via %s ' %(str(count), curr_url, sub_method))
+					break
+		except Exception as se:
+			print('Exception in submission', se)
+	
+	
 	### Intercept and handle requests and responses from the pages
-	await pup_page.setRequestInterception(True)
-	pup_page.on('request', lambda req: asyncio.ensure_future(handle_request(req)))
-	pup_page.on('response',  lambda res: asyncio.ensure_future(handle_response(res)))
+	# await pup_page.setRequestInterception(True)
+	# pup_page.on('request', lambda req: asyncio.ensure_future(handle_request(req)))
+	# pup_page.on('response',  lambda res: asyncio.ensure_future(handle_response(res)))
+
+	await pup_page.evaluateOnNewDocument("()=> "+extra_scripts.js_add_event_override)
+	pup_page.on('console', lambda t: asyncio.ensure_future(log_events_helper(t)))
+
 
  	### Visit the page 
 	try:
-		time.sleep(3)
+		await asyncio.sleep(3)
 		await pup_page.setViewport({'width':1366, 'height':768})
 		await pup_page.goto(phish_url, {'waitUntil':['networkidle0', 'domcontentloaded'],'timeout':900000 })		
 	except Exception as e:
 		print(e)
-
-	
 
 	org_url = tldextract.extract(phish_url)
 	is_run_complete = False 
@@ -546,29 +767,29 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 					os.makedirs(path)
 				if not os.path.exists(path+"/slices"):
 					os.makedirs(path+"/slices")
-				path_slice = path+"/slices/"+str(count)+'_'+str(page_count)+'_screenshot.png';
-				path= path+"/"+str(count)+'_'+str(page_count)+'_screenshot.png';
+				path_slice = path+"/slices/"+str(count)+'_'+str(page_count)+'_screenshot.png'
+				path= path+"/"+str(count)+'_'+str(page_count)+'_screenshot.png'
 				
+				
+				### Wait for the page to load
+				try:
+					await pup_page.waitForNavigation({'waituntil':'networkidle2','timeout':15000})
+				except Exception as te:
+					logger.info('crawl_page_info(%s,%s): Navigation Timeout Exception!!'%(str(count), phish_url))
+
 				try:
 					await pup_page.screenshot({'path': path, 'fullPage':True})
 					await pup_page.screenshot({'path': path_slice, 'fullPage':True})
 				except Exception as e:
 					print(e)
 
-				### Wait for the page to load
-				try:
-					await pup_page.waitForNavigation({'timeout':60000})
-				except Exception as te:
-					logger.info('crawl_page_info(%s,%s): Navigation Timeout Exception!!'%(str(count), phish_url))
-
-				
 				curr_url = pup_page.url			
 				page_url = tldextract.extract(curr_url)  
 
-				### Get title of the page
-					
 				await pup_page.addScriptTag({'content': extra_scripts.js_dom_scripts})
-				time.sleep(5)						
+				await asyncio.sleep(5)	
+
+				### Get title of the page				
 				title = await pup_page.evaluate("()=>get_title()")
 				print('Crawling Page :: ',loop_count, ' :: ' , title)
 
@@ -576,13 +797,8 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 				### Get DOM details of the page				
 				res = await pup_page.evaluate("()=> get_elements(document, -1)")
 
-				### Get DOM Event Listeners of the page				
-				event_listeners = await get_event_listeners()
-				with open(dir_path+'/'+str(count)+'_'+str(page_count)+'_listeners.json', 'w') as lf:
-					json.dump(event_listeners, lf,  indent = 2)
-
-				# ev_listeners = await pup_page.evaluate("()=> getElementEventsAndCoordinates()")
-				# print(ev_listeners)
+				### Get DOM Event Listeners of the page			
+				await get_event_listeners()
 
 				### Add Gremlin script to the page to be used later  
 				await pup_page.addScriptTag({'url': 'https://unpkg.com/gremlins.js' })
@@ -591,8 +807,8 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 				await pup_page.evaluate("()=>w_override(window,window.open)")
 
 				### Clear any overlays by clicking on all buttons
-				if loop_count==1:
-					await clear_overlays()	
+				# if loop_count==1:
+				# 	await clear_overlays()	
 
 				### Get DOM tree to keep track of changes to the DOM
 				dom_tree= await pup_page.evaluate("()=>get_dom_tree()")	
@@ -615,7 +831,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 					phish_db_layer.add_pages_to_site(site_obj.phish_tank_ref_id, site_pages, phish_url)
 					# is_run_complete = True
 					# return;
-				time.sleep(5)
+				await asyncio.sleep(5)
 
 				### Check if the DOM structure is same as the previously visited page
 				samePage = samePage+1 if temp==dom_tree else 0
@@ -634,152 +850,20 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 				### Identifies and takes screenshot of possible captcha elements
 				# await get_noninput_elements(path_slice)
 			
-				temp = dom_tree
-				form = None
-				form_id = None
+				temp = dom_tree				
 				
 				# print(res)
 				### Parse and Categorize each elements in the page
 				page = parse_elements(res,path_slice,page)
-				is_submit_success = False
 				
+				
+				### Check for Captchas and interact if found
+				captcha_results = await detect_captcha_visual(path)
+				time.sleep(3)
+
 				### Try submitting via multiple methods
-				for sub_method in SUBMIT_METHODS:
-
-					print('Submitting method :: ', sub_method)
-					form, form_id = await input_values(page, curr_url)
-					time.sleep(5)
-					print('Entered input values!!')
-
-					try:
-						if sub_method == 'button':
-							field_buttons = await pup_page.JJ('button')
-							
-							for bt_ind, field_btn in enumerate(field_buttons):
-								btn_pos = await field_btn.boundingBox()		
-								await field_btn.focus()
-
-								if btn_pos!=None and btn_pos['width']>0 and btn_pos['height']>0 and  await field_btn.isIntersectingViewport():
-									try:					
-										logger.info('crawl_page_info(%s,%s): Button Clicked by Position :: (%s, %s, %s, %s) ' %(str(count), curr_url, str(btn_pos['x']), str(btn_pos['y']), str(btn_pos['width']), str(btn_pos['height'])))
-										await field_btn.click()   
-										is_submit_success =  await is_navigate_success()
-										if is_submit_success:
-											SUBMIT_METHODS.insert(0,sub_method)
-											# SUBMIT_BUTTON_INDEX = bt_ind 
-											break
-									except Exception as fe:
-										print(fe)
-									await pup_page.goto(curr_url, {'waitUntil':['networkidle2'],'timeout':900000 })
-									await input_values(page,curr_url)
-									print('Entered input values!!')	
-									time.sleep(5)
-							else:
-								continue
-							break
-
-						if sub_method == 'form_name' and form != None:
-							
-							field_submit = await pup_page.JJ('form[name="'+form+'"]')
-							if len(field_submit)>0:								
-								logger.info('crawl_page_info(%s,%s): Form Submitted by Name  :: (%s) ' %(str(count), curr_url, form ))
-
-								await pup_page.Jeval('form[name="'+form+'"]', "(fm) =>{fm.submit();}") 									
-								is_submit_success =  await is_navigate_success()
-							else:
-								sub_method = SUBMIT_METHODS.index(sub_method)+1
-
-						if sub_method == 'form_id' and form_id != None:
-
-							field_submit = await pup_page.JJ('form[id="'+form_id+'"]')							
-							if len(field_submit)>0:								
-								logger.info('crawl_page_info(%s,%s): Form Submitted by Id  :: (%s) ' %(str(count), curr_url, form_id ))
-								await pup_page.Jeval('form[id="'+form_id+'"]', "(fm) =>{fm.submit();}") 
-								is_submit_success =  await is_navigate_success()
-							else:
-								sub_method = SUBMIT_METHODS.index(sub_method)+1
-
-						if sub_method == 'submit_button':
-
-							field_submit = await pup_page.JJ('input[type="submit"]')
-							if len(field_submit) > 0:								
-								btn_pos = await field_submit[0].boundingBox()	
-								logger.info('crawl_page_info(%s,%s): Submit Button Clicked by Position :: (%s, %s, %s, %s) ' %(str(count), curr_url, str(btn_pos['x']), str(btn_pos['y']), str(btn_pos['width']), str(btn_pos['height'])))
-										
-								await field_submit[0].click()
-								is_submit_success =  await is_navigate_success()
-							else:
-								sub_method = SUBMIT_METHODS.index(sub_method)+1
-
-						if sub_method == 'enter_submit':							
-
-							time.sleep(5)							
-							logger.info('crawl_page_info(%s,%s): Submitted by Enter ' %(str(count), curr_url ))
-							await pup_page.keyboard.press('Enter')
-							is_submit_success =  await is_navigate_success()
-							
-						if sub_method == 'canvas_click':
-
-							field_submit = await pup_page.JJ('canvas')
-
-							if len(field_submit) > 0:								
-								btn_pos = await field_submit[0].boundingBox()	
-								logger.info('crawl_page_info(%s,%s): Canvas Clicked by Position :: (%s, %s, %s, %s) ' %(str(count), curr_url, str(btn_pos['x']), str(btn_pos['y']), str(btn_pos['width']), str(btn_pos['height'])))
-								await field_submit[0].click()							
-								await field_submit[0].hover()								
-								await field_submit[0].click()
-								is_submit_success =  await is_navigate_success()
-							else:
-								sub_method = SUBMIT_METHODS.index(sub_method)+1
-
-						if sub_method == 'path_click':
-							field_submit = await pup_page.JJ('path')
-
-							if len(field_submit) > 0:								
-								btn_pos = await field_submit[0].boundingBox()	
-								logger.info('crawl_page_info(%s,%s): Submit Button Clicked by Position :: (%s, %s, %s, %s) ' %(str(count), curr_url, str(btn_pos['x']), str(btn_pos['y']), str(btn_pos['width']), str(btn_pos['height'])))
-								await field_submit[0].click()							
-								await field_submit[0].hover()								
-								await field_submit[0].click()
-								is_submit_success =  await is_navigate_success()
-							else:
-								sub_method = SUBMIT_METHODS.index(sub_method)+1
-
-						if sub_method == 'input_image':
-							field_submit = await pup_page.JJ('input[type="image"]')
-
-							if len(field_submit) > 0:								
-								btn_pos = await field_submit[0].boundingBox()	
-								logger.info('crawl_page_info(%s,%s): Input Image Clicked by Position :: (%s, %s, %s, %s) ' %(str(count), curr_url, str(btn_pos['x']), str(btn_pos['y']), str(btn_pos['width']), str(btn_pos['height'])))
-								
-								await field_submit[0].click()								
-								is_submit_success =  await is_navigate_success()
-							else:
-								sub_method = SUBMIT_METHODS.index(sub_method)+1
-
-						if sub_method == 'gremlin_clicks':			
-					
-							await pup_page.evaluate("""() => { gremlins.createHorde({
-								species: [gremlins.species.clicker({clickTypes:['click','mousedown','mouseup', 'mousemove', 'dblclick']})],
-											
-								mogwais: [gremlins.mogwais.alert(),gremlins.mogwais.fps(),gremlins.mogwais.gizmo()],								
-								strategies: [gremlins.strategies.allTogether({delay: 500, nb: 1000 })]
-							}).unleash() }"""
-							)
-							time.sleep(5)
-								
-							logger.info('crawl_page_info(%s,%s): Submit by Gremlin Clicks ' %(str(count), curr_url))
-								
-							is_submit_success =  await is_navigate_success()
-							break
-
-					except Exception as se:
-						print(se)
-
-					if is_submit_success:
-						SUBMIT_METHODS.insert(0,sub_method)
-						logger.info('crawl_page_info(%s,%s): Successfully submitted via %s ' %(str(count), curr_url, sub_method))
-						break
+				await submit_page(page, curr_url,captcha_results)
+				
 
 				### Saving a screenshot of the current page after submitting
 				if not os.path.exists(path):
@@ -800,7 +884,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 				page_requests = []
 				page_responses = []
 				# await pup_page.reload()  		
-				time.sleep(5)
+				await asyncio.sleep(5)
 			except Exception as e:
 				print('Exception Occured',e)
 			
@@ -828,7 +912,7 @@ async def main(url, phish_id, time_out=600):
 
 parser = argparse.ArgumentParser(description="Crawl phishing links")
 parser.add_argument('url', type=str, help= "URL to crawl")
-parser.add_argument('--phish_id', default=-101 , help="Unique id from phishtank database(optional)" )
+parser.add_argument('--phish_id', default=-1000 , help="Unique id from phishtank database(optional)" )
 parser.add_argument('--timeout', default=600, help="Time duration after which the program will terminate" )
 
 if __name__ == '__main__':

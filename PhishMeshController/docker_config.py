@@ -3,7 +3,7 @@ import os
 project_dir = os.getcwd()
 
 #Docker
-docker_image = 'phishmesh_puppeteer:test'
+docker_image = 'phishmesh_puppeteer:ver2'
 docker_user = 'pptruser'
 docker_container_home = '/home/pptruser/'
 vols ={ project_dir + '/config' :{'bind':docker_container_home + 'app/PhishMeshCrawler/config','mode':'ro'}}

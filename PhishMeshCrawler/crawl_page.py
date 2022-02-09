@@ -563,12 +563,12 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 							print(pos)
 							print('***************** Captcha Found ***********************')
 							# await pup_page.mouse.click(pos[0] + 5, pos[1] + 5)
-							pyautogui.moveTo(pos[0] + 30, pos[1] + 220)
+							pyautogui.moveTo(pos[0] +20+ pos[2]//2, pos[1] + 100 + pos[3]//2)
 							# pyautogui.dragTo(pos[0] + 30, pos[1] + 220 )
 							time.sleep(2)
 							## click nocaptcha
 							print('clicking on captcha')
-							pyautogui.click(pos[0] + 30, pos[1] + 220 )
+							pyautogui.click(pos[0] +20+ pos[2]//2, pos[1] + 100 + pos[3]//2)
 							await asyncio.sleep(2)
 					except Exception as ce:
 						print('Exception in captcha ::', ce )
@@ -593,7 +593,6 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 			pass
 
 	async def submit_page(page_det, curr_url, captcha_results):
-
 		
 		try:
 			is_submit_success = False
@@ -781,7 +780,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 				
 				### Wait for the page to load
 				try:
-					await pup_page.waitForNavigation({'waituntil':'networkidle2','timeout':15000})
+					await pup_page.waitForNavigation({'waituntil':'networkidle2','timeout':30000})
 				except Exception as te:
 					logger.info('crawl_page_info(%s,%s): Navigation Timeout Exception!!'%(str(count), phish_url))
 

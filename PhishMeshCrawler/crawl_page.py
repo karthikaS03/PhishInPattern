@@ -299,39 +299,42 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 				txt = screenshot_slicing.img_to_text(screenshot_path, 'captcha_'+str(el['pos'])+'_'+str(el['size'])+'_'+el['tag'], dim[0], dim[2], dim[1], dim[3] , 3)
 				
 	async def get_event_listeners_old() :
+		try:
+			session = await pup_page.target.createCDPSession()
 
-		session = await pup_page.target.createCDPSession()
+			# Evaluate query selector in the browser
+			res = await session.send('Runtime.evaluate', {
+			"expression" : "document.querySelectorAll('*')"
+			})
+			# print( res)
+			# Using the returned remote object ID, actually get the list of descriptors
+			result = await session.send('Runtime.getProperties', {'objectId' : res['result']['objectId']}) ; 
+			
+			# print(result['result'])
+			# Filter out functions and anything that isn't a node
+			descriptors= list(filter(lambda x:  x.get('value', None) != None and x['value'].get('objectId', None) !=None and x['value'].get('className',None) != 'Function' , result['result']))
+			# print(descriptors)
 
-		# Evaluate query selector in the browser
-		res = await session.send('Runtime.evaluate', {
-		"expression" : "document.querySelectorAll('*')"
-		})
-		# print( res)
-		# Using the returned remote object ID, actually get the list of descriptors
-		result = await session.send('Runtime.getProperties', {'objectId' : res['result']['objectId']}) ; 
-		
-		# print(result['result'])
-		# Filter out functions and anything that isn't a node
-		descriptors= list(filter(lambda x:  x.get('value', None) != None and x['value'].get('objectId', None) !=None and x['value'].get('className',None) != 'Function' , result['result']))
-		# print(descriptors)
+			elements = []
 
-		elements = []
+			for descriptor  in descriptors:
+				objectId = descriptor['value']['objectId']
 
-		for descriptor  in descriptors:
-			objectId = descriptor['value']['objectId']
+				## Add the event listeners, and description of the node (for attributes)
+				all_listeners = await session.send('DOMDebugger.getEventListeners', {'objectId' : objectId })
+				node_desc = await session.send('DOM.describeNode', { 'objectId' : objectId })
+				if len(all_listeners['listeners']) > 0:
+					elements.append({'node' : node_desc['node'], 'listeners': all_listeners['listeners'] })
+				# print(node_desc, all_listeners)
 
-			## Add the event listeners, and description of the node (for attributes)
-			all_listeners = await session.send('DOMDebugger.getEventListeners', {'objectId' : objectId })
-			node_desc = await session.send('DOM.describeNode', { 'objectId' : objectId })
-			if len(all_listeners['listeners']) > 0:
-				elements.append({'node' : node_desc['node'], 'listeners': all_listeners['listeners'] })
-			# print(node_desc, all_listeners)
+				# elements.append(descriptor)
+			with open(dir_path+'/'+str(count)+'_'+str(page_count)+'_listeners_old.log', 'w') as lf:
+				json.dump(elements, lf, indent=2) 
 
-			# elements.append(descriptor)
-		with open(dir_path+'/'+str(count)+'_'+str(page_count)+'_listeners_old.log', 'w') as lf:
-			json.dump(elements, lf, indent=2) 
-
-		return elements
+			return elements
+		except Exception as ee:
+			print('Exception in get_listeners_old ', ee)
+			return []
 
 	async def detect_known_captcha(page_image_det ):
 
@@ -462,63 +465,64 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 		form = None 
 		form_id = None
 		field_selector = ''
-		if curr_page.elements== None:
+		if curr_page == None or curr_page.elements== None:
 			return form,form_id
 
+		try:
+			for element in curr_page.elements:
+				try:
+					# print(element, is_field_visible(element))
+					fv = await is_field_visible(element)
+					if not fv:
+						continue
+					logger.info('crawl_page_info(%s,%s): Providing input for Element (%s,%s,%s,%s) ' %(str(count),curr_url,element.element_name,element.element_html_id,element.element_tag,element.element_value))
+					field = None		
+					field_selector = ''				
+					print('Element :: ', element)	
 
-		for element in curr_page.elements:
-			try:
-				# print(element, is_field_visible(element))
-				fv = await is_field_visible(element)
-				if not fv:
-					continue
-				logger.info('crawl_page_info(%s,%s): Providing input for Element (%s,%s,%s,%s) ' %(str(count),curr_url,element.element_name,element.element_html_id,element.element_tag,element.element_value))
-				field = None		
-				field_selector = ''				
-				print('Element :: ', element)	
+					if element.element_name!=None and len(element.element_name)>0 and 'Unknown' not in element.element_name  :						
+						field_selector = 'input[name='+element.element_name+']'					
+						field, form, form_id = await get_field(field_selector, element.element_frame_index)
 
-				if element.element_name!=None and len(element.element_name)>0 and 'Unknown' not in element.element_name  :						
-					field_selector = 'input[name='+element.element_name+']'					
-					field, form, form_id = await get_field(field_selector, element.element_frame_index)
+					elif  element.element_html_id != None and len(element.element_html_id)>0 and 'Unknown' not in element.element_html_id :					
+						field_selector = 'input[id='+element.element_html_id+']'	
+						field, form, form_id = await get_field(field_selector, element.element_frame_index)
 
-				elif  element.element_html_id != None and len(element.element_html_id)>0 and 'Unknown' not in element.element_html_id :					
-					field_selector = 'input[id='+element.element_html_id+']'	
-					field, form, form_id = await get_field(field_selector, element.element_frame_index)
+					### Type the value in the field 
+					if field !=None and await field.isIntersectingViewport(): 
+						await reset_element(field, pup_page, field_selector)							
+						print('typing value ::', element.element_value)	
+						# print(field)				
+						await field.focus()
+						await field.type(element.element_value)
+						await asyncio.sleep(3)
+						await get_frame(element.element_frame_index, pup_page).Jeval(field_selector, "(el)=>{ el.blur(); }")
+						await asyncio.sleep(3)
 
-				### Type the value in the field 
-				if field !=None and await field.isIntersectingViewport(): 
-					await reset_element(field, pup_page, field_selector)							
-					print('typing value ::', element.element_value)	
-					# print(field)				
-					await field.focus()
-					await field.type(element.element_value)
-					await asyncio.sleep(3)
-					await get_frame(element.element_frame_index, pup_page).Jeval(field_selector, "(el)=>{ el.blur(); }")
-					await asyncio.sleep(3)
-
-			except Exception as ve:
-				
-				logger.info('Input Value (%s,%s): Exception -> Failed on entering value ;%s' %(str(count), curr_url, str(ve)))
-		
-		dropdowns = await pup_page.JJ('select')
-
-		for i, dd in enumerate(dropdowns):
-			print(dd)
-			selected = await dd.JJeval('option', 'v=>v[1].value')
-			dd_id = options = await pup_page.JJeval('select','all=> all['+str(i)+'].getAttribute("id")')
-			dd_name = options = await pup_page.JJeval('select','all=> all['+str(i)+'].getAttribute("name")')
-			print(dd_id,dd_name)
-			dd_selector = None
-			if dd_id!=None or dd_id!='':
-				dd_selector = 'select[id='+dd_id+']'
-			elif dd_name!=None or dd_name!='':
-				dd_selector = 'select[name='+dd_name+']'
+				except Exception as ve:
+					
+					logger.info('Input Value (%s,%s): Exception -> Failed on entering value ;%s' %(str(count), curr_url, str(ve)))
 			
-			if dd_selector!=None:
-				await pup_page.select(dd_selector, selected)
-		
-		await interact_captcha(captcha_result)
+			dropdowns = await pup_page.JJ('select')
 
+			for i, dd in enumerate(dropdowns):
+				print(dd)
+				selected = await dd.JJeval('option', 'v=>v[1].value')
+				dd_id = options = await pup_page.JJeval('select','all=> all['+str(i)+'].getAttribute("id")')
+				dd_name = options = await pup_page.JJeval('select','all=> all['+str(i)+'].getAttribute("name")')
+				print(dd_id,dd_name)
+				dd_selector = None
+				if dd_id!=None or dd_id!='':
+					dd_selector = 'select[id='+dd_id+']'
+				elif dd_name!=None or dd_name!='':
+					dd_selector = 'select[name='+dd_name+']'
+				
+				if dd_selector!=None:
+					await pup_page.select(dd_selector, selected)
+			
+			await interact_captcha(captcha_result)
+		except Exception as ee:
+			print('Exception in input_elements', ee)
 		return form, form_id
 
 	def get_dom_hash(d_tree):
@@ -526,20 +530,22 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 		return hasher.hexdigest()
 
 	async def get_event_listeners():
+		try:
+			### to compre if we are missing listeners
+			await get_event_listeners_old()
 
-		### to compre if we are missing listeners
-		await get_event_listeners_old()
+			all_listeners = []
+			for i,f in enumerate(pup_page.frames):
+				print('frame processed')                
+				await f.addScriptTag({'content':extra_scripts.js_event_scripts})
+				frame_listeners = await f.evaluate("()=> listAllEventListeners()")
+				all_listeners += frame_listeners
+				# print(frame_listeners)
 
-		all_listeners = []
-		for i,f in enumerate(pup_page.frames):
-			print('frame processed')                
-			await f.addScriptTag({'content':extra_scripts.js_event_scripts})
-			frame_listeners = await f.evaluate("()=> listAllEventListeners()")
-			all_listeners += frame_listeners
-			# print(frame_listeners)
-
-		with open(dir_path+'/'+str(count)+'_'+str(page_count)+'_listeners.log', 'w') as lf:
-			json.dump(all_listeners, lf, indent=2) 
+			with open(dir_path+'/'+str(count)+'_'+str(page_count)+'_listeners.log', 'w') as lf:
+				json.dump(all_listeners, lf, indent=2) 
+		except Exception as e:
+			print('get_event_listeners',e)
 
 	async def log_events_helper(log):
 		
@@ -549,31 +555,33 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 					lf.write(txt)
 	
 	async def interact_captcha(result):
+		try:
+			if result['result']!=None and len(result['result']['pred_classes'])>0:
+					### keep a log of all captcha detection results
+					with open(dir_path+'/'+str(count)+'_'+str(page_count)+'_captchas.log', 'w') as lf:
+						json.dump(result, lf, indent=2) 
 
-		if result['result']!=None and len(result['result']['pred_classes'])>0:
-				### keep a log of all captcha detection results
-				with open(dir_path+'/'+str(count)+'_'+str(page_count)+'_captchas.log', 'w') as lf:
-					json.dump(result, lf, indent=2) 
+					### interact with the captchas
+					classes = result['result']['class_names']
+					for i,pos in enumerate(result['result']['pred_boxes']):
+						try:
+							if 'Captcha' in classes[i]:
+								print(pos)
+								print('***************** Captcha Found ***********************')
+								# await pup_page.mouse.click(pos[0] + 5, pos[1] + 5)
+								pyautogui.moveTo(pos[0] +20+ pos[2]//2, pos[1] + 100 + pos[3]//2)
+								# pyautogui.dragTo(pos[0] + 30, pos[1] + 220 )
+								time.sleep(2)
+								## click nocaptcha
+								print('clicking on captcha')
+								pyautogui.click(pos[0] +20+ pos[2]//2, pos[1] + 100 + pos[3]//2)
+								await asyncio.sleep(2)
+						except Exception as ce:
+							print('Exception in captcha ::', ce )
 
-				### interact with the captchas
-				classes = result['result']['class_names']
-				for i,pos in enumerate(result['result']['pred_boxes']):
-					try:
-						if 'Captcha' in classes[i]:
-							print(pos)
-							print('***************** Captcha Found ***********************')
-							# await pup_page.mouse.click(pos[0] + 5, pos[1] + 5)
-							pyautogui.moveTo(pos[0] +20+ pos[2]//2, pos[1] + 100 + pos[3]//2)
-							# pyautogui.dragTo(pos[0] + 30, pos[1] + 220 )
-							time.sleep(2)
-							## click nocaptcha
-							print('clicking on captcha')
-							pyautogui.click(pos[0] +20+ pos[2]//2, pos[1] + 100 + pos[3]//2)
-							await asyncio.sleep(2)
-					except Exception as ce:
-						print('Exception in captcha ::', ce )
-
-				pyautogui.press('esc')
+					pyautogui.press('esc')
+		except Exception as e:
+			print('Exception in captcha ::', e )
 
 	async def detect_captcha_visual(image_path):
 		try:
@@ -600,7 +608,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 
 				print('Submitting method :: ', sub_method)
 				form, form_id = await input_values(page_det, curr_url, captcha_results)
-				await asyncio.sleep(5)
+				time.sleep(5)
 				print('Entered input values!!')
 
 				try:

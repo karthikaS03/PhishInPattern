@@ -877,7 +877,9 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 				time.sleep(3)
 
 				### Try submitting via multiple methods
-				await submit_page(page, curr_url,captcha_results)
+				loop = asyncio.get_event_loop()
+				loop.run_until_complete(submit_page(page, curr_url,captcha_results))
+				# await 
 				
 
 				### Saving a screenshot of the current page after submitting

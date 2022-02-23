@@ -216,6 +216,9 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 	                            '--start-maximized',
 	                            '--ignore-certificate-errors',
 								'--ignore-certificate-errors-spki-list',
+								'--allow-running-insecure-content',
+								'--disable-features=IsolateOrigins',
+								'--disable-web-security',
 								 '--window-size=1366,768'
 	                           ]
 	                     })
@@ -402,7 +405,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 			if not os.path.exists(dpath):
 				os.makedirs(dpath)
 			
-			file_path = dpath + "/" + res_name 
+			file_path = "{}/{}_{}".format(dpath , str(page_count), res_name )
 			try:
 			
 				# Get response content and store it in a file
@@ -762,7 +765,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 	
 	
 	### Intercept and handle requests and responses from the pages
-
+	
 	#await pup_page.setRequestInterception(True)
 	pup_page.on('request', lambda req: asyncio.ensure_future(handle_request(req)))
 	pup_page.on('response',  lambda res: asyncio.ensure_future(handle_response(res)))
@@ -814,6 +817,15 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 					await pup_page.screenshot({'path': path_slice, 'fullPage':True})
 				except Exception as e:
 					print(e)
+
+				# try:
+				# 	session = await pup_page.target.createCDPSession()
+				# 	await session.send('Page.enable')
+				# 	page_mhtml = await session.send('Page.captureSnapshot', {"format": "mhtml"})
+				# 	with open(dir_path+'/resources/'+str(count)+"_"+str(page_count)+".mhtml", 'w') as fo:
+				# 		fo.write(page_mhtml)
+				# except Exception as me:
+				# 	print(me)
 
 				curr_url = pup_page.url			
 				page_url = tldextract.extract(curr_url)  

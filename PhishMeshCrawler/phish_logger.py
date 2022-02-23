@@ -4,11 +4,11 @@ import datetime
 
 class Phish_Logger:
 	@staticmethod
-	def get_phish_logger(name):
+	def get_phish_logger(name, file_name = 'crawl_page.py'):
 		logger = logging.getLogger(name)
 		logger.setLevel(logging.INFO)
 		dir_path = os.path.abspath(os.path.dirname(__file__))
-		handler = logging.FileHandler(os.path.join(dir_path+'/../../data/logs/','phish_logger_'+str(datetime.datetime.now().date())+'.log'))
+		handler = logging.FileHandler(os.path.join(dir_path+'/../../data/logs/',name+'_'+str(datetime.datetime.now().date())+'.log'))
 		handler.setLevel(logging.INFO)
 
 		# create a logging format

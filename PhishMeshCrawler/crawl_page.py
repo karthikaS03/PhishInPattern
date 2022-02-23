@@ -25,9 +25,11 @@ import pyautogui
 dir_path = os.path.abspath(os.path.dirname(__file__))
 dir_path = dir_path +'/../../data'
 
-logger = Phish_Logger.get_phish_logger('page_crawler.py')
+logger = Phish_Logger.get_phish_logger('phish_logger', "crawl_page.py")
+event_logger = Phish_Logger.get_phish_logger('phish_events')
 
 textTags=['DIV','SPAN','TD','LABEL','H1','H2','H3','P','STRONG']
+OFFSET_X, OFFSET_Y = 20, 100
 
 password = None
 
@@ -169,6 +171,7 @@ def parse_elements(res,path,page):
 				print('parse_elements(%s) Element ->  Name: %s ;  Html_Id: %s ; Category: %s ; Value: %s; Parsed_text: %s; Parsed_method:%s' % ( page.page_image_id,element.name, element.html_id,category,value,parsed_text,parsed_method))
 	except Exception as pre:
 		print('Parse_Elements :: Exception !! ',pre)	
+	event_logger.info('parse_elements(%s, %s):: Elements Count :: %s'%(page.page_url,page.page_image_id, len(page.elements)))
 	return page
 
 def get_frame(frameIndex, pup_page):
@@ -244,7 +247,6 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 			return  temp != dom_tree 
 		except Exception as e:
 			print('is_navigate_success :: Exception ',e)
-
 
 	async def clear_overlays():
 
@@ -345,10 +347,12 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 			captcha_methods = [" findRecaptchaClients()", " find_recaptcha()", " find_hcaptcha()", " find_keycaptcha()"]
 			for cm in captcha_methods:
 				captcha_details = await pup_page.evaluate("""()=>"""+cm)
-				cap_info = phish_db_schema.Captcha_Info( page_image_id = page_image_det, 
-														captcha_details = str(captcha_details)
-														)
-				phish_db_layer.add_captcha_info(cap_info)
+				if captcha_details:
+					cap_info = phish_db_schema.Captcha_Info( page_image_id = page_image_det, 
+															captcha_details = str(captcha_details)
+															)
+					event_logger.info('crawl_page_info(%s,%s) :: Known Captcha Found ::{"captcha_method":%s, "page_count" : %s, "curr_url": %s , "page_image_id" : %s}'%(str(count), phish_url, cm,loop_count, pup_page.url, page_image_det))
+					phish_db_layer.add_captcha_info(cap_info)
 		except:
 			pass
 
@@ -358,8 +362,10 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 		###
 
 		def log_request_details(rq):
+			
 			try:
 				req_url = rq.url
+				event_logger.info('handle_request :: %s '%(req_url))
 				req_domain =  '.'.join(tldextract.extract(req_url)[1:]) 
 				req_info = phish_db_schema.Page_Request_Info(request_url = req_url, 
 															request_domain = req_domain, 
@@ -370,18 +376,15 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 															headers = str(rq.headers)[:10000] if rq.headers !=None else rq.headers
 															)
 
-			
-				# phish_db_layer.add_page_req_info(req_info)
-				# print(rq.url,rq.postData)
 				page_requests.append(req_info)
 			except:
 				pass
-		
-		log_request_details(req)
+		if not ('gremlin' in req.url):
+			log_request_details(req)
 
-		### log details of requests involved in the redirections
-		for r in req.redirectChain:			
-			log_request_details(r)
+			### log details of requests involved in the redirections
+			for r in req.redirectChain:			
+				log_request_details(r)
 
 		await req.continue_()
 
@@ -389,43 +392,43 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 		###
 		### Fetch Responses, Store them and their hash in database 
 		###
-		
-		res_name = (res.url.split('?')[0]).split('/')[-1]
-		res_name = res_name if len(res_name)>1 else 'res_' + str(site_obj.site_id) + '_' + res.request._requestId
-		# res_count = res_count + 1
-		dpath = dir_path + '/resources/' + str(count)		
-		digest = ''
+		if not 'gremlin' in res.url:
+			res_name = (res.url.split('?')[0]).split('/')[-1]
+			res_name = res_name if len(res_name)>1 else 'res_' + str(site_obj.site_id) + '_' + res.request._requestId
+			# res_count = res_count + 1
+			dpath = dir_path + '/resources/' + str(count)		
+			digest = ''
 
-		if not os.path.exists(dpath):
-			os.makedirs(dpath)
-		
-		file_path = dpath + "/" + res_name 
-		try:
-		
-			# Get response content and store it in a file
-			txt = await res.buffer()			
-			txt_type = 'w' if type(txt) is str else 'wb' 
-			with open(file_path, txt_type ) as fw:	
-				fw.write(txt)
-		
-			# Generate hash of requested file
-			hasher = hashlib.sha1()
-			with open(file_path, 'rb') as afile:
-				buf = afile.read()    
-				hasher.update(buf)
-			digest = hasher.hexdigest()			
-		except Exception as e:
-			pass
-			# logger.info('handle_response: Exception!! ::'+res.url+' :: '+str(e))
-
-		rsp_info = phish_db_schema.Page_Response_Info(	response_url = res.url, 
-														response_file_path = file_path, 
-														response_file_hash = digest,
-														response_status = str(res.status),
-														response_headers = str(res.headers)[:10000] if res.headers !=None else res.headers
-													)
-		# phish_db_layer.add_page_rsp_info(rsp_info)
-		page_responses.append(rsp_info)
+			if not os.path.exists(dpath):
+				os.makedirs(dpath)
+			
+			file_path = dpath + "/" + res_name 
+			try:
+			
+				# Get response content and store it in a file
+				txt = await res.buffer()			
+				txt_type = 'w' if type(txt) is str else 'wb' 
+				with open(file_path, txt_type ) as fw:	
+					fw.write(txt)
+			
+				# Generate hash of requested file
+				hasher = hashlib.sha1()
+				with open(file_path, 'rb') as afile:
+					buf = afile.read()    
+					hasher.update(buf)
+				digest = hasher.hexdigest()			
+			except Exception as e:
+				pass
+				# logger.info('handle_response: Exception!! ::'+res.url+' :: '+str(e))
+			event_logger.info('handle_response :: %s '%(res.url))
+			rsp_info = phish_db_schema.Page_Response_Info(	response_url = res.url, 
+															response_file_path = file_path, 
+															response_file_hash = digest,
+															response_status = str(res.status),
+															response_headers = str(res.headers)[:10000] if res.headers !=None else res.headers
+														)
+			# phish_db_layer.add_page_rsp_info(rsp_info)
+			page_responses.append(rsp_info)
 
 	async def is_field_visible(el):
 		l,t,r,b = map(float,el.element_position.split(';'))
@@ -475,7 +478,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 					fv = await is_field_visible(element)
 					if not fv:
 						continue
-					logger.info('crawl_page_info(%s,%s): Providing input for Element (%s,%s,%s,%s) ' %(str(count),curr_url,element.element_name,element.element_html_id,element.element_tag,element.element_value))
+					event_logger.info('crawl_page_info(%s,%s): Providing input for Element (%s,%s,%s,%s) ' %(str(count),curr_url,element.element_name,element.element_html_id,element.element_tag,element.element_value))
 					field = None		
 					field_selector = ''				
 					print('Element :: ', element)	
@@ -491,36 +494,36 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 					### Type the value in the field 
 					if field !=None and await field.isIntersectingViewport(): 
 						await reset_element(field, pup_page, field_selector)							
-						print('typing value ::', element.element_value)	
-						# print(field)				
+						print('typing value ::', element.element_value)										
 						await field.focus()
 						await field.type(element.element_value)
-						await asyncio.sleep(3)
+						time.sleep(3)
 						await get_frame(element.element_frame_index, pup_page).Jeval(field_selector, "(el)=>{ el.blur(); }")
-						await asyncio.sleep(3)
+						time.sleep(3)
 
-				except Exception as ve:
-					
+				except Exception as ve:					
 					logger.info('Input Value (%s,%s): Exception -> Failed on entering value ;%s' %(str(count), curr_url, str(ve)))
-			
-			dropdowns = await pup_page.JJ('select')
+			try:
+				dropdowns = await pup_page.JJ('select')
 
-			for i, dd in enumerate(dropdowns):
-				print(dd)
-				selected = await dd.JJeval('option', 'v=>v[1].value')
-				dd_id = options = await pup_page.JJeval('select','all=> all['+str(i)+'].getAttribute("id")')
-				dd_name = options = await pup_page.JJeval('select','all=> all['+str(i)+'].getAttribute("name")')
-				print(dd_id,dd_name)
-				dd_selector = None
-				if dd_id!=None or dd_id!='':
-					dd_selector = 'select[id='+dd_id+']'
-				elif dd_name!=None or dd_name!='':
-					dd_selector = 'select[name='+dd_name+']'
-				
-				if dd_selector!=None:
-					await pup_page.select(dd_selector, selected)
+				for i, dd in enumerate(dropdowns):
+					print(dd)
+					selected = await dd.JJeval('option', 'v=>v[1].value')
+					dd_id = options = await pup_page.JJeval('select','all=> all['+str(i)+'].getAttribute("id")')
+					dd_name = options = await pup_page.JJeval('select','all=> all['+str(i)+'].getAttribute("name")')
+					print(dd_id,dd_name)
+					dd_selector = None
+					if dd_id!=None or dd_id!='':
+						dd_selector = 'select[id='+dd_id+']'
+					elif dd_name!=None or dd_name!='':
+						dd_selector = 'select[name='+dd_name+']'
+					
+					if dd_selector!=None:
+						await pup_page.select(dd_selector, selected)
+			except Exception:
+				pass
 			
-			await interact_captcha(captcha_result)
+			await interact_element(captcha_result, 'Captcha')
 		except Exception as ee:
 			print('Exception in input_elements', ee)
 		return form, form_id
@@ -536,7 +539,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 
 			all_listeners = []
 			for i,f in enumerate(pup_page.frames):
-				print('frame processed')                
+				# print('frame processed')                
 				await f.addScriptTag({'content':extra_scripts.js_event_scripts})
 				frame_listeners = await f.evaluate("()=> listAllEventListeners()")
 				all_listeners += frame_listeners
@@ -554,7 +557,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 					txt = "[CONSOLE LOG][{}] :: {}\n".format(datetime.now().strftime("%m/%d/%Y--%H:%M:%S"), log.text)
 					lf.write(txt)
 	
-	async def interact_captcha(result):
+	async def interact_element(result,el_keyword):
 		try:
 			if result['result']!=None and len(result['result']['pred_classes'])>0:
 					### keep a log of all captcha detection results
@@ -565,23 +568,28 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 					classes = result['result']['class_names']
 					for i,pos in enumerate(result['result']['pred_boxes']):
 						try:
-							if 'Captcha' in classes[i]:
+							if el_keyword in classes[i]:
 								print(pos)
-								print('***************** Captcha Found ***********************')
-								# await pup_page.mouse.click(pos[0] + 5, pos[1] + 5)
-								pyautogui.moveTo(pos[0] +20+ pos[2]//2, pos[1] + 100 + pos[3]//2)
-								# pyautogui.dragTo(pos[0] + 30, pos[1] + 220 )
+								print('***************** '+ el_keyword +' Found ***********************')								
+								pyautogui.moveTo(pos[0] + OFFSET_X + pos[2]//2, pos[1] + OFFSET_Y + pos[3]//2)								
 								time.sleep(2)
 								## click nocaptcha
-								print('clicking on captcha')
-								pyautogui.click(pos[0] +20+ pos[2]//2, pos[1] + 100 + pos[3]//2)
+								print('clicking on '+el_keyword)
+								event_logger.info('crawl_page_info(%s,%s): %s Clicked by Position :: (%s, %s, %s, %s) ' %(str(count), curr_url,el_keyword, str(pos[0]), str(pos[1]), str(pos[2]), str(pos[3])))
+								pyautogui.click(pos[0] + OFFSET_X + pos[2]//2, pos[1] + OFFSET_Y + pos[3]//2)
 								await asyncio.sleep(2)
+								if 'button' in el_keyword:
+									is_submit_success =  await is_navigate_success()
+									if is_submit_success:
+										return True
 						except Exception as ce:
-							print('Exception in captcha ::', ce )
+							print('Exception in interact_element ::', ce )
 
 					pyautogui.press('esc')
 		except Exception as e:
 			print('Exception in captcha ::', e )
+
+		return False
 
 	async def detect_captcha_visual(image_path):
 		try:
@@ -607,11 +615,21 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 			for sub_method in SUBMIT_METHODS:
 
 				print('Submitting method :: ', sub_method)
+				event_logger.info('crawl_page_info(%s,%s): Submitting via (%s) ' %(str(count), curr_url, sub_method ))
 				form, form_id = await input_values(page_det, curr_url, captcha_results)
-				time.sleep(5)
+				# time.sleep(5)
 				print('Entered input values!!')
 
 				try:
+					if sub_method == 'visual_button':											
+						try:					
+							is_submit_success = await interact_element(captcha_results,'button')							
+							if is_submit_success:
+								break
+						except Exception as fe:
+							print(fe)
+						await asyncio.sleep(5)
+						
 					if sub_method == 'button':
 						field_buttons = await pup_page.JJ('button')
 						
@@ -621,7 +639,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 
 							if btn_pos!=None and btn_pos['width']>0 and btn_pos['height']>0 and  await field_btn.isIntersectingViewport():
 								try:					
-									logger.info('crawl_page_info(%s,%s): Button Clicked by Position :: (%s, %s, %s, %s) ' %(str(count), curr_url, str(btn_pos['x']), str(btn_pos['y']), str(btn_pos['width']), str(btn_pos['height'])))
+									event_logger.info('crawl_page_info(%s,%s): Button Clicked by Position :: (%s, %s, %s, %s) ' %(str(count), curr_url, str(btn_pos['x']), str(btn_pos['y']), str(btn_pos['width']), str(btn_pos['height'])))
 									await field_btn.click()   
 									is_submit_success =  await is_navigate_success()
 									if is_submit_success:
@@ -642,7 +660,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 						
 						field_submit = await pup_page.JJ('form[name="'+form+'"]')
 						if len(field_submit)>0:								
-							logger.info('crawl_page_info(%s,%s): Form Submitted by Name  :: (%s) ' %(str(count), curr_url, form ))
+							event_logger.info('crawl_page_info(%s,%s): Form Submitted by Name  :: (%s) ' %(str(count), curr_url, form ))
 
 							await pup_page.Jeval('form[name="'+form+'"]', "(fm) =>{fm.submit();}") 									
 							is_submit_success =  await is_navigate_success()
@@ -653,7 +671,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 
 						field_submit = await pup_page.JJ('form[id="'+form_id+'"]')							
 						if len(field_submit)>0:								
-							logger.info('crawl_page_info(%s,%s): Form Submitted by Id  :: (%s) ' %(str(count), curr_url, form_id ))
+							event_logger.info('crawl_page_info(%s,%s): Form Submitted by Id  :: (%s) ' %(str(count), curr_url, form_id ))
 							await pup_page.Jeval('form[id="'+form_id+'"]', "(fm) =>{fm.submit();}") 
 							is_submit_success =  await is_navigate_success()
 						else:
@@ -664,7 +682,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 						field_submit = await pup_page.JJ('input[type="submit"]')
 						if len(field_submit) > 0:								
 							btn_pos = await field_submit[0].boundingBox()	
-							logger.info('crawl_page_info(%s,%s): Submit Button Clicked by Position :: (%s, %s, %s, %s) ' %(str(count), curr_url, str(btn_pos['x']), str(btn_pos['y']), str(btn_pos['width']), str(btn_pos['height'])))
+							event_logger.info('crawl_page_info(%s,%s): Submit Button Clicked by Position :: (%s, %s, %s, %s) ' %(str(count), curr_url, str(btn_pos['x']), str(btn_pos['y']), str(btn_pos['width']), str(btn_pos['height'])))
 									
 							await field_submit[0].click()
 							is_submit_success =  await is_navigate_success()
@@ -674,7 +692,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 					if sub_method == 'enter_submit':							
 
 						await asyncio.sleep(5)							
-						logger.info('crawl_page_info(%s,%s): Submitted by Enter ' %(str(count), curr_url ))
+						event_logger.info('crawl_page_info(%s,%s): Submitted by Enter ' %(str(count), curr_url ))
 						await pup_page.keyboard.press('Enter')
 						is_submit_success =  await is_navigate_success()
 						
@@ -684,7 +702,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 
 						if len(field_submit) > 0:								
 							btn_pos = await field_submit[0].boundingBox()	
-							logger.info('crawl_page_info(%s,%s): Canvas Clicked by Position :: (%s, %s, %s, %s) ' %(str(count), curr_url, str(btn_pos['x']), str(btn_pos['y']), str(btn_pos['width']), str(btn_pos['height'])))
+							event_logger.info('crawl_page_info(%s,%s): Canvas Clicked by Position :: (%s, %s, %s, %s) ' %(str(count), curr_url, str(btn_pos['x']), str(btn_pos['y']), str(btn_pos['width']), str(btn_pos['height'])))
 							await field_submit[0].click()							
 							await field_submit[0].hover()								
 							await field_submit[0].click()
@@ -697,7 +715,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 
 						if len(field_submit) > 0:								
 							btn_pos = await field_submit[0].boundingBox()	
-							logger.info('crawl_page_info(%s,%s): Submit Button Clicked by Position :: (%s, %s, %s, %s) ' %(str(count), curr_url, str(btn_pos['x']), str(btn_pos['y']), str(btn_pos['width']), str(btn_pos['height'])))
+							event_logger.info('crawl_page_info(%s,%s): Submit Button Clicked by Position :: (%s, %s, %s, %s) ' %(str(count), curr_url, str(btn_pos['x']), str(btn_pos['y']), str(btn_pos['width']), str(btn_pos['height'])))
 							await field_submit[0].click()							
 							await field_submit[0].hover()								
 							await field_submit[0].click()
@@ -710,8 +728,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 
 						if len(field_submit) > 0:								
 							btn_pos = await field_submit[0].boundingBox()	
-							logger.info('crawl_page_info(%s,%s): Input Image Clicked by Position :: (%s, %s, %s, %s) ' %(str(count), curr_url, str(btn_pos['x']), str(btn_pos['y']), str(btn_pos['width']), str(btn_pos['height'])))
-							
+							event_logger.info('crawl_page_info(%s,%s): Input Image Clicked by Position :: (%s, %s, %s, %s) ' %(str(count), curr_url, str(btn_pos['x']), str(btn_pos['y']), str(btn_pos['width']), str(btn_pos['height'])))
 							await field_submit[0].click()								
 							is_submit_success =  await is_navigate_success()
 						else:
@@ -728,7 +745,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 						)
 						await asyncio.sleep(5)
 							
-						logger.info('crawl_page_info(%s,%s): Submit by Gremlin Clicks ' %(str(count), curr_url))
+						event_logger.info('crawl_page_info(%s,%s): Submit by Gremlin Clicks ' %(str(count), curr_url))
 							
 						is_submit_success =  await is_navigate_success()
 						break
@@ -738,7 +755,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 
 				if is_submit_success:
 					SUBMIT_METHODS.insert(0,sub_method)
-					logger.info('crawl_page_info(%s,%s): Successfully submitted via %s ' %(str(count), curr_url, sub_method))
+					event_logger.info('crawl_page_info(%s,%s): Successfully submitted via %s ' %(str(count), curr_url, sub_method))
 					break
 		except Exception as se:
 			print('Exception in submission', se)
@@ -746,18 +763,18 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 	
 	### Intercept and handle requests and responses from the pages
 
-	# await pup_page.setRequestInterception(True)
-	# pup_page.on('request', lambda req: asyncio.ensure_future(handle_request(req)))
-	# pup_page.on('response',  lambda res: asyncio.ensure_future(handle_response(res)))
+	await pup_page.setRequestInterception(True)
+	pup_page.on('request', lambda req: asyncio.ensure_future(handle_request(req)))
+	pup_page.on('response',  lambda res: asyncio.ensure_future(handle_response(res)))
 
 	await pup_page.evaluateOnNewDocument("()=> "+extra_scripts.js_add_event_override)
 	pup_page.on('console', lambda t: asyncio.ensure_future(log_events_helper(t)))
-
 
  	### Visit the page 
 	try:
 		await asyncio.sleep(3)
 		await pup_page.setViewport({'width':1366, 'height':768})
+		event_logger.info('crawl_page_info(%s,%s) :: Visiting URL :: %s '%(str(count),phish_url, phish_url))
 		await pup_page.goto(phish_url, {'waitUntil':['networkidle0', 'domcontentloaded'],'timeout':900000 })		
 	except Exception as e:
 		print(e)
@@ -768,7 +785,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 	try:
 		loop_count=0
 		### Different methods to submit the data , prioritized from specific method to more generalized
-		SUBMIT_METHODS = ['button', 'submit_button', 'form_name', 'form_id',  'canvas_click', 'path_click', 'input_image', 'enter_submit']#, 'gremlin_clicks' ] 
+		SUBMIT_METHODS = ['visual_button','button', 'submit_button', 'form_name', 'form_id',  'canvas_click', 'path_click', 'input_image', 'enter_submit']#, 'gremlin_clicks' ] 
 		SUBMIT_BUTTON_INDEX =-1
 		### Parse and Interact with the pages
 		while loop_count<20:
@@ -807,7 +824,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 				### Get title of the page				
 				title = await pup_page.evaluate("()=>get_title()")
 				print('Crawling Page :: ',loop_count, ' :: ' , title)
-
+				event_logger.info('crawl_page_info(%s,%s) :: Crawling Page ::{"page_count" : %s, "curr_url": %s , "title" : %s}'%(str(count),phish_url, loop_count,curr_url, title))
 							
 				### Get DOM details of the page				
 				res = await pup_page.evaluate("()=> get_elements(document, -1)")
@@ -822,8 +839,8 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 				await pup_page.evaluate("()=>w_override(window,window.open)")
 
 				### Clear any overlays by clicking on all buttons
-				# if loop_count==1:
-				# 	await clear_overlays()	
+				if loop_count==1:
+					await clear_overlays()	
 
 				### Get DOM tree to keep track of changes to the DOM
 				dom_tree= await pup_page.evaluate("()=>get_dom_tree()")	
@@ -836,13 +853,14 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 				
 				page.responses = page_responses		
 				page.dom_hash = get_dom_hash(dom_tree)
-				
-				print(page.page_title, page.page_image_id)
+				event_logger.info('crawl_page_info(%s,%s) :: Page Details ::{"page_count" : %s, "page_image_id": %s, "curr_url": %s , "title" : %s, "dom_hash" : %s }'%(str(count),phish_url, loop_count, page_image_det, curr_url, title, page.dom_hash))
+				# print(page.page_title, page.page_image_id)
 				site_pages.append(page)
 
 				### Continue execution even when page navigated to a different domain
 				if org_url.domain != page_url.domain :
 					logger.info('crawl_page_info(%s,%s):  Navigated to different domain!!'%(str(count), curr_url))
+					event_logger.info('crawl_page_info(%s,%s) :: Navigated to different domain!! ::{"page_count" : %s, "prev_url": %s, "page_url": %s }'%(str(count),phish_url, loop_count,curr_url,page_url))
 					phish_db_layer.add_pages_to_site(site_obj.phish_tank_ref_id, site_pages, phish_url)
 					# is_run_complete = True
 					# return;
@@ -854,7 +872,8 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 				### If the same page was visited 3 times, then stop execution  		
 				if samePage >= 3:
 					phish_db_layer.add_pages_to_site(site_obj.phish_tank_ref_id, site_pages, phish_url)
-					logger.info('crawl_page_info(%s,%s): Page repeated for few times!! ' %(str(count), curr_url))					
+					logger.info('crawl_page_info(%s,%s): Page repeated for few times!! ' %(str(count), curr_url))		
+					event_logger.info('crawl_page_info(%s,%s) :: Page repeated for few times!! ::{"page_count" : %s, "prev_url": %s, "page_url": %s }'%(str(count),phish_url, loop_count,curr_url,page_url))
 					is_run_complete = True
 					return
 
@@ -877,10 +896,13 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 				time.sleep(3)
 
 				### Try submitting via multiple methods
-				loop = asyncio.get_event_loop()
-				loop.run_until_complete(submit_page(page, curr_url,captcha_results))
+				print('SUBMITTING STARTED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+				# lop = asyncio.get_event_loop()
+				# lop.run_until_complete(submit_page(page, curr_url,captcha_results))
+				# asyncio.ensure_future(submit_page(page, curr_url,captcha_results))
+				await submit_page(page, curr_url,captcha_results)
 				# await 
-				
+				print('SUBMITTING COMPLETE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 
 				### Saving a screenshot of the current page after submitting
 				if not os.path.exists(path):
@@ -904,21 +926,26 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 				await asyncio.sleep(5)
 			except Exception as e:
 				print('Exception Occured',e)
-			
+
+	except Exception as oe:
+		event_logger.info('crawl_page_info(%s,%s): Exception -- %s'%(str(count), phish_url, oe))
 	finally:
 		if not is_run_complete:
 			phish_db_layer.add_pages_to_site(site_obj.phish_tank_ref_id ,site_pages, phish_url)
-		
+			event_logger.info('crawl_page_info(%s,%s): Crawling Complete!! Browser Closed!! ' %(str(count), phish_url))
+		else:
+			event_logger.info('crawl_page_info(%s,%s): Crawling Incomplete!! Browser Closed ' %(str(count), phish_url))
 		await browser.close()
+		
 		print('Browser Closed!!!')
 
 
-async def main(url, phish_id, time_out=600):
+async def main(url, phish_id, time_out=1200):
 	site_pages =[]
 	site_obj = phish_db_schema.Sites(site_url = url, phish_tank_ref_id = phish_id)
 	try:		
 		site_obj = phish_db_layer.add_site_info(site_obj)
-
+		event_logger.info('main(%s,%s):: Crawling Started!!' %(str(site_obj.site_id), url))
 		# Starts the crawling process with a execution timeout
 		await asyncio.wait_for( crawl_web_page(url, site_obj, site_pages,  phish_id), timeout = time_out)
 	except asyncio.TimeoutError:

@@ -8,7 +8,7 @@ from autocorrect import spell
 # import re, HTMLParser, urllib2
 from phish_logger import Phish_Logger
 
-logger = Phish_Logger.get_phish_logger('Screenshot_slicing.py')
+logger = Phish_Logger.get_phish_logger('phish_logger', "screenshot_slicing.py")
 
 def remove_file_extension(file_name):
 	tokens = file_name.split('.')

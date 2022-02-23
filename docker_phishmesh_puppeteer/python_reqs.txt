@@ -9,3 +9,6 @@ faker
 pandas
 pyenchant
 tldextract
+pyautogui
+xlib
+mitmproxy

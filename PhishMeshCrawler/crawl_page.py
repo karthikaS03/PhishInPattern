@@ -360,7 +360,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 		###
 		### Intercept Page Requests and log them
 		###
-
+		req.__setattr__('_allowInterception',True)
 		def log_request_details(rq):
 			
 			try:
@@ -763,7 +763,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 	
 	### Intercept and handle requests and responses from the pages
 
-	await pup_page.setRequestInterception(True)
+	#await pup_page.setRequestInterception(True)
 	pup_page.on('request', lambda req: asyncio.ensure_future(handle_request(req)))
 	pup_page.on('response',  lambda res: asyncio.ensure_future(handle_response(res)))
 
@@ -785,7 +785,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 	try:
 		loop_count=0
 		### Different methods to submit the data , prioritized from specific method to more generalized
-		SUBMIT_METHODS = ['visual_button','button', 'submit_button', 'form_name', 'form_id',  'canvas_click', 'path_click', 'input_image', 'enter_submit']#, 'gremlin_clicks' ] 
+		SUBMIT_METHODS = ['button', 'submit_button', 'visual_button', 'form_name', 'form_id',  'canvas_click', 'path_click', 'input_image', 'enter_submit']#, 'gremlin_clicks' ] 
 		SUBMIT_BUTTON_INDEX =-1
 		### Parse and Interact with the pages
 		while loop_count<20:
@@ -956,7 +956,7 @@ async def main(url, phish_id, time_out=1200):
 
 parser = argparse.ArgumentParser(description="Crawl phishing links")
 parser.add_argument('url', type=str, help= "URL to crawl")
-parser.add_argument('--phish_id', default=-1000 , help="Unique id from phishtank database(optional)" )
+parser.add_argument('--phish_id', default=-2000 , help="Unique id from phishtank database(optional)" )
 parser.add_argument('--timeout', default=600, help="Time duration after which the program will terminate" )
 
 if __name__ == '__main__':

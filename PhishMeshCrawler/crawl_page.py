@@ -229,7 +229,8 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 	temp = None 
 	samePage = 0
 	count=phish_id
-	page_count=0
+	page_count = 0
+	res_page_count = 0
 	page_requests = []
 	page_responses = []
 
@@ -405,7 +406,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 			if not os.path.exists(dpath):
 				os.makedirs(dpath)
 			
-			file_path = "{}/{}_{}".format(dpath , str(page_count), res_name )
+			file_path = "{}/{}_{}".format(dpath , str(res_page_count), res_name )
 			try:
 			
 				# Get response content and store it in a file
@@ -527,6 +528,14 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 				pass
 			
 			await interact_element(captcha_result, 'Captcha')
+
+			### Saving a screenshot of the current page after filling the data			
+			path = dir_path+'/images/'+str(count)+"/"+str(count)+'_'+str(page_count)+'_screenshot_processed.png'
+			try:
+				await pup_page.screenshot({'path':path, 'fullPage': True})
+			except Exception as se:
+				logger.info('crawl_page_info(%s,%s): Exception -> Failed on saving processed screenshot; %s' %(str(count), curr_url, str(se)))
+
 		except Exception as ee:
 			print('Exception in input_elements', ee)
 		return form, form_id
@@ -574,12 +583,12 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 							if el_keyword in classes[i]:
 								print(pos)
 								print('***************** '+ el_keyword +' Found ***********************')								
-								pyautogui.moveTo(pos[0] + OFFSET_X + pos[2]//2, pos[1] + OFFSET_Y + pos[3]//2)								
+								pyautogui.moveTo(pos[0] + (pos[2]-pos[0])//2 + OFFSET_X , pos[1] + (pos[3]-pos[1])//2 + OFFSET_Y )								
 								time.sleep(2)
 								## click nocaptcha
 								print('clicking on '+el_keyword)
 								event_logger.info('crawl_page_info(%s,%s): %s Clicked by Position :: (%s, %s, %s, %s) ' %(str(count), curr_url,el_keyword, str(pos[0]), str(pos[1]), str(pos[2]), str(pos[3])))
-								pyautogui.click(pos[0] + OFFSET_X + pos[2]//2, pos[1] + OFFSET_Y + pos[3]//2)
+								pyautogui.click(pos[0] + (pos[2]-pos[0])//2 + OFFSET_X , pos[1] + (pos[3]-pos[1])//2 + OFFSET_Y )
 								await asyncio.sleep(2)
 								if 'button' in el_keyword:
 									is_submit_success =  await is_navigate_success()
@@ -649,6 +658,33 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 										SUBMIT_METHODS.insert(0,sub_method)
 										# SUBMIT_BUTTON_INDEX = bt_ind 
 										break
+								except Exception as fe:
+									print(fe)
+								await pup_page.goto(curr_url, {'waitUntil':['networkidle2'],'timeout':900000 })
+								await input_values(page_det, curr_url, captcha_results)
+								print('Entered input values!!')	
+								await asyncio.sleep(5)
+						else:
+							continue
+						break
+
+					if sub_method == 'link-button':
+						field_links = await pup_page.JJ('a')
+						
+						for link_ind, link in enumerate(field_links):
+							link_pos = await link.boundingBox()	
+
+							if link_pos!=None and link_pos['width']>40 and link_pos['height']>15 and  await link.isIntersectingViewport():
+								try:
+									link_class = await pup_page.JJeval('a','all=> all['+str(link_ind)+'].getAttribute("class")')	
+									if 'button' in link_class or 'btn' in link_class:
+										event_logger.info('crawl_page_info(%s,%s): Link Clicked by Position :: (%s, %s, %s, %s) ' %(str(count), curr_url, str(btn_pos['x']), str(btn_pos['y']), str(btn_pos['width']), str(btn_pos['height'])))	
+										await link.click()   
+										is_submit_success =  await is_navigate_success()
+										if is_submit_success:
+											SUBMIT_METHODS.insert(0,sub_method)
+											# SUBMIT_BUTTON_INDEX = bt_ind 
+											break
 								except Exception as fe:
 									print(fe)
 								await pup_page.goto(curr_url, {'waitUntil':['networkidle2'],'timeout':900000 })
@@ -788,7 +824,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 	try:
 		loop_count=0
 		### Different methods to submit the data , prioritized from specific method to more generalized
-		SUBMIT_METHODS = ['button', 'submit_button', 'visual_button', 'form_name', 'form_id',  'canvas_click', 'path_click', 'input_image', 'enter_submit']#, 'gremlin_clicks' ] 
+		SUBMIT_METHODS = ['button', 'submit_button','link-button', 'visual_button', 'form_name', 'form_id',  'canvas_click', 'path_click', 'input_image', 'enter_submit']#, 'gremlin_clicks' ] 
 		SUBMIT_BUTTON_INDEX =-1
 		### Parse and Interact with the pages
 		while loop_count<20:
@@ -804,7 +840,8 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 					os.makedirs(path+"/slices")
 				path_slice = path+"/slices/"+str(count)+'_'+str(page_count)+'_screenshot.png'
 				path= path+"/"+str(count)+'_'+str(page_count)+'_screenshot.png'
-				
+				path_full = path+"/"+str(count)+'_'+str(page_count)+'_screenshot.png'
+				path_content = dir_path+'/resources/'+str(count)+'_page_'+str(page_count)+'.html'
 				
 				### Wait for the page to load
 				try:
@@ -813,11 +850,19 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 					logger.info('crawl_page_info(%s,%s): Navigation Timeout Exception!!'%(str(count), phish_url))
 
 				try:
-					await pup_page.screenshot({'path': path, 'fullPage':True})
-					await pup_page.screenshot({'path': path_slice, 'fullPage':True})
+					await pup_page.screenshot({'path': path, 'fullPage':False})
+					await pup_page.screenshot({'path': path_slice, 'fullPage':False})
+					await pup_page.screenshot({'path': path_full, 'fullPage':True})
 				except Exception as e:
 					print(e)
 
+				try:
+					content = await pup_page.content()
+					with open(path_content,'w') as fc:
+						fc.write(content)
+				except Exception as e:
+					print(e)
+					
 				# try:
 				# 	session = await pup_page.target.createCDPSession()
 				# 	await session.send('Page.enable')
@@ -908,23 +953,13 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 				time.sleep(3)
 
 				### Try submitting via multiple methods
-				print('SUBMITTING STARTED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-				# lop = asyncio.get_event_loop()
-				# lop.run_until_complete(submit_page(page, curr_url,captcha_results))
-				# asyncio.ensure_future(submit_page(page, curr_url,captcha_results))
+				print('SUBMITTING STARTED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')				
+				res_page_count = page_count + 1
 				await submit_page(page, curr_url,captcha_results)
 				# await 
 				print('SUBMITTING COMPLETE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 
-				### Saving a screenshot of the current page after submitting
-				if not os.path.exists(path):
-					os.makedirs(path)
-				path = dir_path+'/images/'+str(count)+"/"+str(count)+'_'+str(page_count)+'_processed_screenshot.png'
-				try:
-					await pup_page.screenshot({'path':path, 'fullPage': True})
-				except Exception as se:
-					logger.info('crawl_page_info(%s,%s): Exception -> Failed on saving processed screenshot; %s' %(str(count), curr_url, str(se)))
-
+				
 				try:
 					print('Adding Page Info!!')
 					phish_db_layer.add_page_info(page)

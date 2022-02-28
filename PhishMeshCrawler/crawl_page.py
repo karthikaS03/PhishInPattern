@@ -675,24 +675,25 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 						for link_ind, link in enumerate(field_links):
 							link_pos = await link.boundingBox()	
 							print('link',link_pos,link)
-							if link_pos!=None and link_pos['width']>40 and link_pos['height']>15 and  await link.isIntersectingViewport():
+							if await link.isIntersectingViewport():
 								try:
 									link_class = await pup_page.JJeval('a','all=> all['+str(link_ind)+'].getAttribute("class")')
-									print(link_class)	
+									link_text = await pup_page.JJeval('a','all=> all['+str(link_ind)+'].innerText')
+										
 									if 'button' in link_class or 'btn' in link_class:
-										event_logger.info('crawl_page_info(%s,%s): Link Clicked by Position :: (%s, %s, %s, %s) ' %(str(count), curr_url, str(btn_pos['x']), str(btn_pos['y']), str(btn_pos['width']), str(btn_pos['height'])))	
-										await link.click()   
-										is_submit_success =  await is_navigate_success()
+										event_logger.info('crawl_page_info(%s,%s): Link Info :: (class: %s, text: %s) ' %(str(count), curr_url, link_class,link_text))	
+										#await link.click()   
+										#is_submit_success =  await is_navigate_success()
 										if is_submit_success:
 											SUBMIT_METHODS.insert(0,sub_method)
 											# SUBMIT_BUTTON_INDEX = bt_ind 
 											break
 								except Exception as fe:
 									print(fe)
-								await pup_page.goto(curr_url, {'waitUntil':['networkidle2'],'timeout':900000 })
-								await input_values(page_det, curr_url, captcha_results)
-								print('Entered input values!!')	
-								await asyncio.sleep(5)
+								#await pup_page.goto(curr_url, {'waitUntil':['networkidle2'],'timeout':900000 })
+								#await input_values(page_det, curr_url, captcha_results)
+								#print('Entered input values!!')	
+								#await asyncio.sleep(5)
 						else:
 							continue
 						break

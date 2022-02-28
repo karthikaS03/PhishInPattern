@@ -271,8 +271,8 @@ js_event_scripts =  """
                         allElements.push(document);
                         allElements.push(window);
 
-                        const types = ['onkeypress','onkeydown','onkeyup'];
-                        const listener_types = ['keypress','keydown','keyup'];
+                        const types = ['onkeypress','onkeydown','onkeyup','onclick','onmousedown'];
+                        const listener_types = ['keypress','keydown','keyup','click','mousedown'];
                         //for (let ev in window) {
                         //    if (/^on/.test(ev)) 
                         //        types[types.length] = ev;

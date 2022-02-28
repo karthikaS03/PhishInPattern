@@ -29,7 +29,7 @@ logger = Phish_Logger.get_phish_logger('phish_logger', "crawl_page.py")
 event_logger = Phish_Logger.get_phish_logger('phish_events')
 
 textTags=['DIV','SPAN','TD','LABEL','H1','H2','H3','P','STRONG']
-OFFSET_X, OFFSET_Y = 20, 100
+OFFSET_X, OFFSET_Y = 20, 130
 
 password = None
 
@@ -121,6 +121,7 @@ def parse_elements(res,path,page):
 					text=screenshot_slicing.img_to_text(path,'I',r["left"]-5,r["top"]-5,r["right"]+5,r["bottom"]+5,3) 
 					
 					text = filterData(text)
+					
 					if len(text)>1 :    					
 						element.parsed_texts.append(text)
 						element.parsed_methods.append("Image_OCR_Read_Inside")
@@ -586,7 +587,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 								pyautogui.moveTo(pos[0] + (pos[2]-pos[0])//2 + OFFSET_X , pos[1] + (pos[3]-pos[1])//2 + OFFSET_Y )								
 								time.sleep(2)
 								## click nocaptcha
-								print('clicking on '+el_keyword)
+								print('clicking on '+el_keyword, (pos[0] + (pos[2]-pos[0])//2 + OFFSET_X , pos[1] + (pos[3]-pos[1])//2 + OFFSET_Y))
 								event_logger.info('crawl_page_info(%s,%s): %s Clicked by Position :: (%s, %s, %s, %s) ' %(str(count), curr_url,el_keyword, str(pos[0]), str(pos[1]), str(pos[2]), str(pos[3])))
 								pyautogui.click(pos[0] + (pos[2]-pos[0])//2 + OFFSET_X , pos[1] + (pos[3]-pos[1])//2 + OFFSET_Y )
 								await asyncio.sleep(2)
@@ -668,15 +669,16 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 							continue
 						break
 
-					if sub_method == 'link-button':
+					if sub_method == 'link_button':
 						field_links = await pup_page.JJ('a')
 						
 						for link_ind, link in enumerate(field_links):
 							link_pos = await link.boundingBox()	
-
+							print('link',link_pos,link)
 							if link_pos!=None and link_pos['width']>40 and link_pos['height']>15 and  await link.isIntersectingViewport():
 								try:
-									link_class = await pup_page.JJeval('a','all=> all['+str(link_ind)+'].getAttribute("class")')	
+									link_class = await pup_page.JJeval('a','all=> all['+str(link_ind)+'].getAttribute("class")')
+									print(link_class)	
 									if 'button' in link_class or 'btn' in link_class:
 										event_logger.info('crawl_page_info(%s,%s): Link Clicked by Position :: (%s, %s, %s, %s) ' %(str(count), curr_url, str(btn_pos['x']), str(btn_pos['y']), str(btn_pos['width']), str(btn_pos['height'])))	
 										await link.click()   
@@ -824,7 +826,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 	try:
 		loop_count=0
 		### Different methods to submit the data , prioritized from specific method to more generalized
-		SUBMIT_METHODS = ['button', 'submit_button','link-button', 'visual_button', 'form_name', 'form_id',  'canvas_click', 'path_click', 'input_image', 'enter_submit']#, 'gremlin_clicks' ] 
+		SUBMIT_METHODS = ['button', 'submit_button','link_button', 'visual_button', 'form_name', 'form_id',  'canvas_click', 'path_click', 'input_image', 'enter_submit']#, 'gremlin_clicks' ] 
 		SUBMIT_BUTTON_INDEX =-1
 		### Parse and Interact with the pages
 		while loop_count<20:
@@ -839,8 +841,9 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 				if not os.path.exists(path+"/slices"):
 					os.makedirs(path+"/slices")
 				path_slice = path+"/slices/"+str(count)+'_'+str(page_count)+'_screenshot.png'
+				path_full = path+"/"+str(count)+'_'+str(page_count)+'_screenshot_full.png'
 				path= path+"/"+str(count)+'_'+str(page_count)+'_screenshot.png'
-				path_full = path+"/"+str(count)+'_'+str(page_count)+'_screenshot.png'
+				
 				path_content = dir_path+'/resources/'+str(count)+'_page_'+str(page_count)+'.html'
 				
 				### Wait for the page to load
@@ -851,7 +854,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 
 				try:
 					await pup_page.screenshot({'path': path, 'fullPage':False})
-					await pup_page.screenshot({'path': path_slice, 'fullPage':False})
+					await pup_page.screenshot({'path': path_slice, 'fullPage':True})
 					await pup_page.screenshot({'path': path_full, 'fullPage':True})
 				except Exception as e:
 					print(e)
@@ -1003,11 +1006,10 @@ async def main(url, phish_id, time_out=1200):
 
 parser = argparse.ArgumentParser(description="Crawl phishing links")
 parser.add_argument('url', type=str, help= "URL to crawl")
-parser.add_argument('--phish_id', default=-2000 , help="Unique id from phishtank database(optional)" )
+parser.add_argument('--phish_id', default=9999 , help="Unique id from phishtank database(optional)" )
 parser.add_argument('--timeout', default=600, help="Time duration after which the program will terminate" )
 
 if __name__ == '__main__':
 	args = parser.parse_args()
 	# print(args.url, args.phish_id, args.timeout)
 	asyncio.get_event_loop().run_until_complete(main(args.url, args.phish_id, args.timeout))
-

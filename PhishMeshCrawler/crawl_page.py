@@ -370,7 +370,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 			
 			try:
 				req_url = rq.url
-				event_logger.info('handle_request :: %s '%(req_url))
+				event_logger.info("handle_request :: {'method':%s, 'url':%s, 'post_data': %s} "%(str(rq.method, req_url, rq.postData))
 				req_domain =  '.'.join(tldextract.extract(req_url)[1:]) 
 				req_info = phish_db_schema.Page_Request_Info(request_url = req_url, 
 															request_domain = req_domain, 

@@ -76,6 +76,7 @@ recipient
 phone
 mobile
 mobil
+mobi
 telephone
 telefone
 fone
@@ -166,3 +167,9 @@ sms
 SMS
 2FA
 message
+sword
+mfa
+mail
+com
+gmail
+hotmail

@@ -69,13 +69,14 @@ def filterData(text):
 	return text
 
 def parse_elements(res,path,page):
-	try:
-		fields=[]
-		elementCount=0
-		#Enumerate all the elements in the page
-		for index,r in enumerate(res):
-			#Filter Input and Select tags which are not hidden
-			# print(r)
+	# try:
+	fields=[]
+	elementCount=0
+	#Enumerate all the elements in the page
+	for index,r in enumerate(res):
+		#Filter Input and Select tags which are not hidden
+		# print(r)
+		try:
 			if any(tag in r["tag"] for tag in ['INPUT']) and 'type' in r and r["type"] not in ['hidden','button','submit','reset','radio','checkbox'] and r["visibility"]!='hidden':
 				
 				flag=False
@@ -158,20 +159,20 @@ def parse_elements(res,path,page):
 				category_id = phish_db_layer.find_category_id(category)
 				# print('check:5')
 				element_db = phish_db_schema.Elements(element_name = element.name, 
-													  element_tag = element.tag, 
-													  element_html_id = element.html_id, 
-													  element_position =element.position, 
-													  element_form = element.form, 
-													  element_value = value,
-													  element_frame_index = element.frameIndex,
-													  field_category_id = category_id,
-													  element_parsed_text = parsed_text, 
-													  element_parsed_method = parsed_method)
+													element_tag = element.tag, 
+													element_html_id = element.html_id, 
+													element_position =element.position, 
+													element_form = element.form, 
+													element_value = value,
+													element_frame_index = element.frameIndex,
+													field_category_id = category_id,
+													element_parsed_text = parsed_text, 
+													element_parsed_method = parsed_method)
 				page.elements.append(element_db)
 				
 				print('parse_elements(%s) Element ->  Name: %s ;  Html_Id: %s ; Category: %s ; Value: %s; Parsed_text: %s; Parsed_method:%s' % ( page.page_image_id,element.name, element.html_id,category,value,parsed_text,parsed_method))
-	except Exception as pre:
-		print('Parse_Elements :: Exception !! ',pre)	
+		except Exception as pre:
+			print('Parse_Elements :: Exception !! ',pre, r)	
 	event_logger.info('parse_elements(%s, %s):: Elements Count :: %s'%(page.page_url,page.page_image_id, len(page.elements)))
 	return page
 
@@ -921,8 +922,8 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 				### Continue execution even when page navigated to a different domain
 				if org_url.domain != page_url.domain :
 					logger.info('crawl_page_info(%s,%s):  Navigated to different domain!!'%(str(count), curr_url))
-					event_logger.info('crawl_page_info(%s,%s) :: Navigated to different domain!! ::{"page_count" : %s, "prev_url": %s, "page_url": %s }'%(str(count),phish_url, loop_count,curr_url,page_url))
-					phish_db_layer.add_pages_to_site(site_obj.phish_tank_ref_id, site_pages, phish_url)
+					event_logger.info('crawl_page_info(%s,%s) :: Navigated to different domain!! ::{"page_count" : %s, "curr_url": %s }'%(str(count),phish_url, loop_count,curr_url))
+					# phish_db_layer.add_pages_to_site(site_obj.phish_tank_ref_id, site_pages, phish_url)
 					# is_run_complete = True
 					# return;
 				await asyncio.sleep(5)

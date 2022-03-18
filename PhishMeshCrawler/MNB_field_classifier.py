@@ -139,71 +139,76 @@ def classify(text):
     global samples
     if len(text)<2:
         return "", 0
+    try:
+        if samples == None:
+            samples = phish_db_layer.get_categories()
+            samples.sort()
+            # print(samples)
+        cl_pickle = open(os.path.join(dir_path,"category.pickle"),"rb")
+        nb = pickle.load(cl_pickle)
+        cl_pickle.close()
+        
+        text=  text.encode('ascii','ignore').decode() # text.decode('unicode_escape').encode('ascii','ignore')
 
-    if samples == None:
-        samples = phish_db_layer.get_categories()
-        samples.sort()
-        # print(samples)
-    cl_pickle = open(os.path.join(dir_path,"category.pickle"),"rb")
-    nb = pickle.load(cl_pickle)
-    cl_pickle.close()
-    
-    text=  text.encode('ascii','ignore').decode() # text.decode('unicode_escape').encode('ascii','ignore')
+        X_test = token_cleaning(text)
 
-    X_test = token_cleaning(text)
+        y_pred = nb.predict(X_test)
+        
+        y_pred_prob = nb.predict_proba(X_test)[:,y_pred]
+        # print(X_test, y_pred, nb.predict_proba(X_test))
+        # print (samples)
+        result = samples[y_pred[0]]
 
-    y_pred = nb.predict(X_test)
-    
-    y_pred_prob = nb.predict_proba(X_test)[:,y_pred]
-    # print(X_test, y_pred, nb.predict_proba(X_test))
-    # print (samples)
-    result = samples[y_pred[0]]
+        # print(text)
+        if 'captcha' in text.lower():        
+            result = "Captcha"
+        elif 'sms' in text.lower() or '2FA' in text or 'otp' in text.lower():
+            result = 'sms'
+        # if 'address' not in result.lower():
+        #     print(result,';;(',y_pred_prob[0],')' , X_test[0] )
 
-    # print(text)
-    # if 'captcha' in text.lower():        
-    #     result = "Captcha"
-    # elif 'sms' in text.lower() or '2FA' in text or 'otp' in text.lower():
-    #     result = 'sms'
-    # if 'address' not in result.lower():
-    #     print(result,';;(',y_pred_prob[0],')' , X_test[0] )
+        if result.lower() in X_test[0].lower():        
+            return result, y_pred_prob[0]
+        elif y_pred_prob[0]*100 <20:
+            # print ("low probability")
+            return "", 0
 
-    if result.lower() in X_test[0].lower():        
         return result, y_pred_prob[0]
-    elif y_pred_prob[0]*100 <20:
-        # print ("low probability")
-        return "", 0
-
-    return result, y_pred_prob[0]
+    except Exception as e:
+        print(e)
 
 
 def get_category_input_value(category):
     
-    fake = Faker()
-    
-    choice ={'address' : fake.address(),
-    		'name'    : fake.name(),
-    		'username': fake.simple_profile(sex=None).get("username"),
-    		'password': fake.password(), #fake.word()+'@'+str(fake.random_number(digits=3)),
-            'identification': fake.simple_profile(sex=None).get("username"),
-    		'email'   : fake.email(),
-            'phone'   : str(fake.random_number(digits=10)),
-            'month'   : fake.month(),
-            'date'    : str(fake.simple_profile(sex=None).get("birthdate")),
-            'year'    : fake.year(),
-            'day'     : fake.day_of_month(),
-    		'card'    : fake.credit_card_number(card_type=None),
-    		'cvv'     : fake.credit_card_security_code(card_type=None),
-    		'expdate' : fake.credit_card_expire(),#start="now", end="+10Y", date_format="%m%y"),
-    		'ssn'     : fake.ssn(),
-            'zip'     : fake.zipcode(),
-            'sms'     : str(fake.random_number(digits=6)),
-            'captcha' : fake.password(length=6, special_chars=False),
-            'city'    : fake.city(),
-            'state'   : fake.state(),
-            'license' : fake.ssn(),
-            'search'  : ''
-    }    
-    return choice.get(category.lower(),"default")
+    try:
+        fake = Faker()
+        
+        choice ={'address' : fake.address(),
+                'name'    : fake.name(),
+                'username': fake.simple_profile(sex=None).get("username"),
+                'password': fake.password(), #fake.word()+'@'+str(fake.random_number(digits=3)),
+                'identification': fake.simple_profile(sex=None).get("username"),
+                'email'   : fake.email(),
+                'phone'   : str(fake.random_number(digits=10)),
+                'month'   : fake.month(),
+                'date'    : str(fake.simple_profile(sex=None).get("birthdate")),
+                'year'    : fake.year(),
+                'day'     : fake.day_of_month(),
+                'card'    : fake.credit_card_number(card_type=None),
+                'cvv'     : fake.credit_card_security_code(card_type=None),
+                'expdate' : fake.credit_card_expire(),#start="now", end="+10Y", date_format="%m%y"),
+                'ssn'     : fake.ssn(),
+                'zip'     : fake.zipcode(),
+                'sms'     : str(fake.random_number(digits=6)),
+                'captcha' : fake.password(length=6, special_chars=False),
+                'city'    : fake.city(),
+                'state'   : fake.state(),
+                'license' : fake.ssn(),
+                'search'  : ''
+        }    
+        return choice.get(category.lower(),"default")
+    except Exception as e:
+        print(e)
 
 def test_real_samples():
 

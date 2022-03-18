@@ -93,7 +93,7 @@ def pickle_data(test = False):
     # t_set = pd.concat([t_set,t_set, t_set])
     X, Y = t_set['text'], t_set['cat_num']
     
-    x_train, x_test, y_train, y_test = train_test_split(X,Y, test_size=0.30, random_state=123, stratify = Y )
+    x_train, x_test, y_train, y_test = train_test_split(X,Y, test_size=0.05, random_state=123, stratify = Y )
     # print(y_test.unique())
     
 
@@ -141,8 +141,7 @@ def classify(text):
         return "", 0
 
     if samples == None:
-        t_set = phish_db_layer.get_categories() #set([t['category'] for t in fetch_field_training_set()]) #
-        samples =[e for e in t_set]
+        samples = phish_db_layer.get_categories()
         samples.sort()
         # print(samples)
     cl_pickle = open(os.path.join(dir_path,"category.pickle"),"rb")
@@ -161,16 +160,16 @@ def classify(text):
     result = samples[y_pred[0]]
 
     # print(text)
-    if 'captcha' in text.lower():        
-        result = "Captcha"
-    elif 'sms' in text.lower() or '2FA' in text:
-        result = 'sms'
-    
-    # print(result, X_test[0], y_pred_prob[0])
+    # if 'captcha' in text.lower():        
+    #     result = "Captcha"
+    # elif 'sms' in text.lower() or '2FA' in text or 'otp' in text.lower():
+    #     result = 'sms'
+    # if 'address' not in result.lower():
+    #     print(result,';;(',y_pred_prob[0],')' , X_test[0] )
 
     if result.lower() in X_test[0].lower():        
         return result, y_pred_prob[0]
-    elif y_pred_prob[0]*100 <40:
+    elif y_pred_prob[0]*100 <20:
         # print ("low probability")
         return "", 0
 
@@ -185,7 +184,7 @@ def get_category_input_value(category):
     		'name'    : fake.name(),
     		'username': fake.simple_profile(sex=None).get("username"),
     		'password': fake.password(), #fake.word()+'@'+str(fake.random_number(digits=3)),
-            'identification': fake.email(),
+            'identification': fake.simple_profile(sex=None).get("username"),
     		'email'   : fake.email(),
             'phone'   : str(fake.random_number(digits=10)),
             'month'   : fake.month(),
@@ -204,52 +203,66 @@ def get_category_input_value(category):
             'license' : fake.ssn(),
             'search'  : ''
     }    
-    return choice.get(category.lower(),"default");
+    return choice.get(category.lower(),"default")
 
 def test_real_samples():
 
+    
     cl_pickle = open(os.path.join(dir_path,"category.pickle"),"rb")
     nb = pickle.load(cl_pickle)
     cl_pickle.close()
 
-    # print(nb.classes_)
-    t_set = phish_db_layer.get_categories() #set([t['category'] for t in fetch_field_training_set()]) #phish_db_layer.get_categories()
-    samples =[e for e in t_set]
+    print(nb.classes_)
+    
+    samples = phish_db_layer.get_categories()
     samples.sort()
+    samples = [s.lower() for s in samples]
+    print((samples))
+    # exit()
 
     
     
-    df_test = pd.read_csv('./test_results.csv', header=0)
-
-    df_test = df_test[df_test['Target'].notna()]
-    df_test['Target'] = df_test['Target'].apply(lambda x: x.lower())
+    df_test = pd.read_csv('../data/field_test_results_unknown.csv', header=0)
+    
+    df_test = df_test[df_test['field_category'].notna()]
+    
+    # df_test
+    df_test['field_category'] = df_test['field_category'].apply(lambda x: x.lower())
     df_test = df_test.fillna('')
-    # print(df_test.describe())
-    
+    df_category_count = df_test.groupby(['field_category']).count()
+    print(df_category_count.head(20))
     pred = []
+    y_test = []
     for i,row in df_test.iterrows():
-        text_data = row['element_parsed_text']
+        text_data = row['field_text']
         res, _ = classify(text_data)
         res = res if res!="" else 'unknown'
-        if 'username' in text_data.lower():
-            res = 'username'
-        # print(row['element_parsed_text'], res)
-        pred.append(res.lower())
+        # if 'username' in text_data.lower():
+        #     res = 'username'
+        if res!="":
+            pred.append(res.lower())
+            y_test.append(row['field_category'])
     # print(set(pred))
-    labels = list(set(df_test['Target'].tolist()).union(set(pred)))
-    acc_score = metrics.accuracy_score(df_test['Target'],pred)
-    cm = metrics.confusion_matrix(df_test['Target'], pred, labels = labels)
-    # print(cm)
-    plot_confusion_matrix(cm, labels, 'c.png')
+    # labels = list(set(df_test['field_category'].tolist()).union(set(pred)))
+    labels = phish_db_layer.get_categories()
+    labels.sort()
+    labels = [s.lower() for s in labels]
+    # print(pred)
+    acc_score = metrics.accuracy_score(y_test,pred)
+    # cm = metrics.confusion_matrix(df_test['field_category'], pred, labels = labels)
+    pred_labels = list(set(pred))
+    pred_labels.sort()
+    print(metrics.classification_report(y_test, pred, labels = pred_labels ))
+
+    #plot_confusion_matrix(cm, labels, 'c.png')
     
-    # print('Accuracy Score ::', acc_score)
-    df_test['Predecited'] = pred
-    df_test.to_csv('test_results.csv')
+    print('Accuracy Score ::', acc_score)
+    df_test['Predicted'] = pred
+    df_test.to_csv('field_test_results_unknown.csv', index = False)
 
 # classify('email')
 if __name__ == '__main__':
-    pickle_data(test=False)
-    # test_real_samples()
-    print(classify('Captcha code'))
-    print(classify('sms code'))
-    print(classify('2FA code'))
+    # pickle_data(test=False)
+    test_real_samples()
+    # classify('User ID')
+    

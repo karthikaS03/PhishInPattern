@@ -168,10 +168,8 @@ def add_phish_tank_link(phish_tank_link_obj):
 def add_open_phish_link(open_phish_links_obj):
   try:
     session = create_db_session()
-    link =session.query(Open_Phish_Links).filter(text('open_phish_url='+str(open_phish_links_obj.open_phish_url))).first()
-    if link !=None:
-      session.merge(open_phish_links_obj)
-    else:
+    link = session.query(Open_Phish_Links).filter(text('open_phish_url="'+str(open_phish_links_obj.open_phish_url)+'"')).first()
+    if link == None:      
       session.add(open_phish_links_obj)
     session.commit()
     session.close()
@@ -330,8 +328,8 @@ def fetch_openphish_urls(count=100):
   try:
     session = create_db_session()
     phish_urls = []
-    for s in session.query(Open_Phish_Links).filter(and_(Open_Phish_Links.is_analyzed==None,Open_Phish_Links.status=='Online')).limit(count).all():
-      a = Open_Phish_Links(open_phish_link_id = s.open_phish_link_id, open_phish_url = s.open_phish_url)
+    for s in session.query(Open_Phish_Links).filter(Open_Phish_Links.is_analyzed==None).limit(count).all():
+      a = Open_Phish_Links(open_phish_link_id = s.open_phish_link_id, open_phish_url = s.open_phish_url, open_phish_screenshot = s.open_phish_screenshot, open_phish_phishkit = s.open_phish_phishkit)
       # print(a)
       phish_urls.append(a)
     session.commit()

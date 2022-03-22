@@ -74,7 +74,12 @@ class Phish_Tank_Links(base):
 class Open_Phish_Links(base):
   __tablename__ ='tbl_OpenPhishLinks'
   open_phish_link_id = Column(Integer, primary_key = True)
-  open_phish_url = Column(String(1000))
+  open_phish_url = Column(String(1500))
+  open_phish_sector = Column(String(50))
+  open_phish_screenshot = Column(String(500))
+  open_phish_phishkit = Column(String(500))
+  open_phish_brand = Column(String(100))
+  discover_time = Column(DateTime)
   recorded_datetime = Column(DateTime, default=datetime.datetime.now())
   status = Column(String(100))
   is_analyzed= Column(Boolean)

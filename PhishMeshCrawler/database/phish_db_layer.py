@@ -281,6 +281,24 @@ def fetch_field_training_set():
   except Exception as e:
     logger.info('Exception occured in fetch_field_training_set: '+str(e))
 
+def fetch_multi_phishing_data():
+  try:
+    conn = db.connect()
+    query = text('SELECT * FROM multi_stage_phishing')
+    result = conn.execute(query)
+    return result.fetchall()
+  except Exception as e:
+    print(e)
+
+def fetch_nonmulti_phishing_data():
+  try:
+    conn = db.connect()
+    query = text('SELECT * FROM single_stage_phishing')
+    result = conn.execute(query)
+    return result.fetchall()
+  except Exception as e:
+    print(e)
+
 def fetch_requested_resources():
   try:
     conn = db.connect()

@@ -1,6 +1,6 @@
 import site
 import sys
-sys.path.append('/home/sk-lab/Desktop/PhishProDetector/PhishMeshCrawler/')
+sys.path.append('/home/karthika/Desktop/PhishMesh/PhishMeshCrawler/')
 import pandas as pd
 import numpy as np
 import json
@@ -17,8 +17,8 @@ import tldextract
 class GraphPlots:
     def __init__(self,):
         self.show_plots = False
-        self.legend_size = 14
-        self.label_size = 16
+        self.legend_size = 12
+        self.label_size = 14
     
     def _get_label_rotation(self, angle, offset):
 
@@ -56,7 +56,8 @@ class GraphPlots:
             ) 
 
     def plot_circular_bar(self, df_data, file_name):
-
+        
+        plt.clf()
         VALUES = df_data["values"].values
         LABELS = df_data["labels"].values
         GROUP = df_data["group"].values
@@ -134,6 +135,8 @@ class GraphPlots:
 
     def plot_donut(self, df_data,fig_name):
 
+        plt.clf()
+
         # explosion
         explode = [0.03] * df_data.shape[0]
         df_data.plot.pie(y=0,legend=None, autopct='%1.1f%%', pctdistance=0.85, explode= explode, colormap = 'Dark2', fontsize=self.label_size) 
@@ -151,6 +154,8 @@ class GraphPlots:
         plt.savefig(fig_name)
 
     def plot_correlation(self, df_data, fig_name):
+
+        plt.clf()
         corr = df_data.corr()
         sn.heatmap(corr, annot= True)
         # plt.show()
@@ -159,6 +164,7 @@ class GraphPlots:
 
     def plot_heatmap(self, df_data, fig_name):
         # print(df_data.index)
+        plt.clf()
         plt.imshow(df_data, cmap='viridis')
         plt.colorbar()
         plt.xticks(range(len(df_data.columns)), df_data.columns, rotation =90)
@@ -169,7 +175,8 @@ class GraphPlots:
        
 
     def plot_bar_subplots(self, df_data, fig_name ):
-            
+        
+        plt.clf()
         axes = df_data.plot.bar(subplots=True,colormap = 'Blues', sharey=True, sharex=True)
         # print(ax)
         cols = df_data.columns
@@ -210,7 +217,7 @@ class PaperGraphs:
 
             self.graph.plot_circular_bar(df_data,self.results_dir+'field_groups2.pdf')
         except Exception as e:
-            print(e)
+            print('Fields Count ::', e)
 
     def plot_submit_methods(self, submit_methods):
         try:
@@ -218,7 +225,7 @@ class PaperGraphs:
             df_data = pd.DataFrame.from_dict(dict_data, orient = 'index')
             self.graph.plot_donut(df_data,self.results_dir+'submit_methods.pdf')
         except Exception as e:
-            print(e)
+            print('Submit Methods :: ',e)
 
     def plot_parsed_methods(self, parsed_methods):
         try:
@@ -226,7 +233,7 @@ class PaperGraphs:
             df_data = pd.DataFrame.from_dict(dict_data, orient = 'index')
             self.graph.plot_donut(df_data, self.results_dir+'parsed_methods.pdf')
         except Exception as e:
-            print(e)
+            print('Parsed Methods ::',e)
 
     def plot_multi_phishing_data(self, field_counts):
         try:
@@ -241,10 +248,11 @@ class PaperGraphs:
             df_fields = df_fields[cols]
             df_fields = df_fields.sort_values(by=['Page_1'], ascending=False)
             df_fields = df_fields.fillna(0)
-            df_fields = df_fields.drop(df_fields.columns[df_fields.apply(lambda col: max(col)<10)],axis=1)
-            # print(df_fields.head())
-            self.graph.plot_bar_subplots(df_fields, self.results_dir+'multi_phishing_fields_count.pdf')
+            df_fields = df_fields.drop(df_fields.columns[df_fields.apply(lambda col: max(col)<=10)],axis=1)
+            print(df_fields.head())
             self.graph.plot_heatmap(df_fields, self.results_dir+'multi_phishing_fields_count_heatmap.pdf')
+            self.graph.plot_bar_subplots(df_fields, self.results_dir+'multi_phishing_fields_count.pdf')
+            
         except Exception as e:
             print(e)
 
@@ -263,8 +271,9 @@ class PaperGraphs:
             df_fields = df_fields.fillna(0)
             df_fields = df_fields.drop(df_fields.columns[df_fields.apply(lambda col: max(col)<10)],axis=1)
             # print(df_fields.head())
-            self.graph.plot_bar_subplots(df_fields, self.results_dir+'nonmulti_phishing_fields_count.pdf')
             self.graph.plot_heatmap(df_fields, self.results_dir+'nonmulti_phishing_fields_count_heatmap.pdf')
+            self.graph.plot_bar_subplots(df_fields, self.results_dir+'nonmulti_phishing_fields_count.pdf')
+            
         except Exception as e:
             print(e)
 
@@ -288,7 +297,9 @@ class DataAnalyzer:
                 if 'container' in record_date:
                     continue
                 containers_dir_path2 = containers_dir_path+ record_date + '/'
+                print(containers_dir_path2)
                 for d in os.listdir(containers_dir_path2):
+                    # print(d)
                     logs_dir = os.path.join(containers_dir_path2,d,'data/logs/')
                     for f in os.listdir(logs_dir):
                         if 'event' in f:
@@ -306,16 +317,18 @@ class DataAnalyzer:
                                     if ind2 > 0:                                
                                         parsed_method = line[line.find('Parsed Method'):].split(':')[-1]
                                         if parsed_method in ['Element Name\n', 'Element Id\n', 'placeholder\n']:
-                                            parsed_method = 'Element Data'
+                                            parsed_method = 'HTML Data'
                                         elif 'OCR' in parsed_method:
                                             parsed_method = 'OCR'
                                         elif 'InnerText' in parsed_method:
-                                            parsed_method = 'Sibling Element Data'
+                                            parsed_method = 'Other HTML'
                                         self.parsed_methods[parsed_method] = self.parsed_methods.get(parsed_method,0) + 1
                                     
-                                    captcha_ind = line.find('Captcha')
-                                    if captcha_ind > 0:
-                                        captcha_type = [w for w in line.split(' ') if 'Captcha' in w]
+                                    captcha_ind = line.find('Known Captcha')
+                                    if captcha_ind > 0:                                        
+                                        self.captchas['Known Captcha'].add(d)
+                                    elif line.find('Captcha') > 0 and line.find('Clicked')>0 and d not in self.captchas['Known Captcha']:
+                                        captcha_type = [w for w in line.split(' ') if 'Captcha' in w][0]
                                         self.captchas[captcha_type].add(d)
         except Exception as e:
             print(e)
@@ -444,18 +457,18 @@ class DataAnalyzer:
 
         fields_file_path = '../data/fields_groups_count.csv'
         self.graphs.plot_fields_count(fields_file_path)
-
+    
         self.parse_logs()
         self.graphs.plot_submit_methods(self.submit_methods)
         self.graphs.plot_parsed_methods(self.parsed_methods)
-        print(self.captchas)
+        # print(self.captchas)
+        print({k:len(v) for k,v in self.captchas.items()})
+        # self.parse_multi_phishing_data()
+        # self.graphs.plot_multi_phishing_data(self.fields_count_page)
 
-        self.parse_multi_phishing_data()
-        self.graphs.plot_multi_phishing_data(self.fields_count_page)
-
-        self.parse_nonmulti_phishing_data()
-        self.graphs.plot_nonmulti_phishing_data(self.fields_count_page)
-        print(self.fields_count_all)
+        # self.parse_nonmulti_phishing_data()
+        # self.graphs.plot_nonmulti_phishing_data(self.fields_count_page)
+        # print(self.fields_count_all)
 
 
 
@@ -543,7 +556,6 @@ def get_label_rotation(angle, offset):
     else: 
         alignment = "left"
     return rotation, alignment
-
 def add_labels(angles, values, labels, offset, ax):
     
     # This is the space between the end of the bar and the label
@@ -555,7 +567,6 @@ def add_labels(angles, values, labels, offset, ax):
         
         # Obtain text rotation and alignment
         rotation, alignment = get_label_rotation(angle, offset)
-
         # And finally add the text
         ax.text(
             x=angle, 
@@ -567,12 +578,7 @@ def add_labels(angles, values, labels, offset, ax):
             rotation=rotation, 
             rotation_mode="anchor"
         ) 
-
-
-
-
 def plot_pagewise_fields():
-
     def process_fields(rows):     
         elem_dict = {}
         elements = ','.join(rows).split(',')
@@ -581,10 +587,8 @@ def plot_pagewise_fields():
                 
                 elem_dict[e] = elem_dict.get(e,0)+1        
         return json.dumps(elem_dict)
-
     def plot_pagewise_field_count(df_data):
         df_final = pd.DataFrame()
-
         for i,grp in df_data.iterrows():            
             page_rank = grp['page_rank']
             el_dict = json.loads(grp['page_elements'])
@@ -605,13 +609,10 @@ def plot_pagewise_fields():
         ax = df_final.plot.bar(x='fields')
         ax.set_yscale('log')
         plt.show()
-
     page_fields = phish_db_layer.fetch_pagewise_fields()
     df_pages = pd.DataFrame(page_fields, columns=['site_id', 'page_elements', 'page_rank'])
-
     ### Group pages by theier page numbers and get the fields encountered per each groups
     df_grouped = df_pages.groupby(['page_rank'])['page_elements'].apply(lambda x: process_fields(x) ).reset_index()
-
     ### Plot the count of requested fields per page number
     plot_pagewise_field_count(df_grouped)
     
@@ -624,5 +625,4 @@ def plot_pagewise_fields():
     # df_filtered = df_pages[df_pages['site_id'].isin(site_ids)]
     # df_filtered = df_filtered.sort_values(by = ['site_id', 'page_rank'])
     # print(df_filtered.head())
-
 '''

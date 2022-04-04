@@ -1,1 +1,3 @@
 ssdeep
+mysqlclient
+seaborn

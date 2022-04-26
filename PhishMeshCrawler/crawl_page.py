@@ -373,7 +373,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 				req_url = rq.url
 				event_logger.info("handle_request :: {'method':%s, 'url':%s, 'post_data': %s} "%(rq.method, req_url, rq.postData))
 				req_domain =  '.'.join(tldextract.extract(req_url)[1:]) 
-				req_info = phish_db_schema.Page_Request_Info(request_url = req_url, 
+				req_info = phish_db_schema.Page_Request_Info(request_url = req_url[:10000], 
 															request_domain = req_domain, 
 															request_method = rq.method, 
 															request_type = rq.resourceType
@@ -427,7 +427,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 				pass
 				# logger.info('handle_response: Exception!! ::'+res.url+' :: '+str(e))
 			event_logger.info('handle_response :: %s '%(res.url))
-			rsp_info = phish_db_schema.Page_Response_Info(	response_url = res.url, 
+			rsp_info = phish_db_schema.Page_Response_Info(	response_url = res.url[:10000], 
 															response_file_path = file_path, 
 															response_file_hash = digest,
 															response_status = str(res.status),

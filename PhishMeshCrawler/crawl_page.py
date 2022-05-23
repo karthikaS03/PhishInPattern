@@ -371,7 +371,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 			
 			try:
 				req_url = rq.url
-				event_logger.info("handle_request :: {'method':%s, 'url':%s, 'post_data': %s} "%(rq.method, req_url, rq.postData))
+				event_logger.info("handle_request :: {'method':%s, 'url':%s, 'post_data': %s,'headers': %s} "%(rq.method, req_url, rq.postData,rq.headers))
 				req_domain =  '.'.join(tldextract.extract(req_url)[1:]) 
 				req_info = phish_db_schema.Page_Request_Info(request_url = req_url[:10000], 
 															request_domain = req_domain, 
@@ -828,7 +828,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 	try:
 		loop_count=0
 		### Different methods to submit the data , prioritized from specific method to more generalized
-		SUBMIT_METHODS = ['button', 'submit_button','link_button', 'visual_button', 'form_name', 'form_id',  'canvas_click', 'path_click', 'input_image', 'enter_submit']#, 'gremlin_clicks' ] 
+		SUBMIT_METHODS = [ 'enter_submit','button', 'submit_button','link_button', 'visual_button', 'form_name', 'form_id',  'canvas_click', 'path_click', 'input_image']#, 'gremlin_clicks' ] 
 		SUBMIT_BUTTON_INDEX =-1
 		### Parse and Interact with the pages
 		while loop_count<20:

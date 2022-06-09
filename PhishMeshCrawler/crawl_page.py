@@ -954,7 +954,8 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 				
 				
 				### Check for Captchas and interact if found
-				captcha_results = await detect_captcha_visual(path)
+				#captcha_results = await detect_captcha_visual(path)
+				captcha_results = {}
 				time.sleep(3)
 
 				### Try submitting via multiple methods

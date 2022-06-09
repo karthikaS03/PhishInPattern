@@ -935,12 +935,12 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 				site_pages.append(page)
 
 				### Continue execution even when page navigated to a different domain
-				if org_url.domain != page_url.domain  and count > 0 and temp!=dom_tree :
+				if org_url.domain != page_url.domain :# and loop_count > 0 and temp!=dom_tree :
 					logger.info('crawl_page_info(%s,%s):  Navigated to different domain!!'%(str(count), curr_url))
 					event_logger.info('crawl_page_info(%s,%s) :: Navigated to different domain!! ::{"page_count" : %s, "curr_url": %s }'%(str(count),phish_url, loop_count,curr_url))
 					phish_db_layer.add_pages_to_site(site_obj.phish_tank_ref_id, site_pages, phish_url)
 					is_run_complete = True
-					return;
+					#return;
 				await asyncio.sleep(5)
 
 				### Check if the DOM structure is same as the previously visited page

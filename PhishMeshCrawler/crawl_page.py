@@ -1009,7 +1009,7 @@ async def main(url, phish_id, time_out=1200):
 parser = argparse.ArgumentParser(description="Crawl phishing links")
 parser.add_argument('url', type=str, help= "URL to crawl")
 parser.add_argument('--phish_id', default=9999 , help="Unique id from phishtank database(optional)" )
-parser.add_argument('--timeout', default=600, help="Time duration after which the program will terminate" )
+parser.add_argument('--timeout', default=1100, help="Time duration after which the program will terminate" )
 
 if __name__ == '__main__':
 	args = parser.parse_args()

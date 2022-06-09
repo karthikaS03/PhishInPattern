@@ -888,24 +888,39 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 				print('Crawling Page :: ',loop_count, ' :: ' , title)
 				event_logger.info('crawl_page_info(%s,%s) :: Crawling Page ::{"page_count" : %s, "curr_url": %s , "title" : %s}'%(str(count),phish_url, loop_count,curr_url, title))
 							
-				### Get DOM details of the page				
-				res = await pup_page.evaluate("()=> get_elements(document, -1)")
-
+				### Get DOM details of the page			
+				try:
+					res = await pup_page.evaluate("()=> get_elements(document, -1)")
+				except:
+					res = {}
+					
 				### Get DOM Event Listeners of the page			
-				await get_event_listeners()
-
+				try:
+					await get_event_listeners()
+				except:
+					pass
+				
 				### Add Gremlin script to the page to be used later  
-				await pup_page.addScriptTag({'url': 'https://unpkg.com/gremlins.js' })
-
+				try:
+					await pup_page.addScriptTag({'url': 'https://unpkg.com/gremlins.js' })
+				except:
+					pass
+				
 				### Execute Script to override window open
-				await pup_page.evaluate("()=>w_override(window,window.open)")
-
+				try:
+					await pup_page.evaluate("()=>w_override(window,window.open)")
+				except:
+					pass
+				
 				### Clear any overlays by clicking on all buttons
 				if loop_count==1:
 					await clear_overlays()	
 
 				### Get DOM tree to keep track of changes to the DOM
-				dom_tree= await pup_page.evaluate("()=>get_dom_tree()")	
+				try:
+					dom_tree= await pup_page.evaluate("()=>get_dom_tree()")	
+				except:
+					dom_tree = ""
 				# print(dom_tree)
 				
 				### Append page details to site

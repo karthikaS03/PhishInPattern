@@ -758,7 +758,7 @@ async def crawl_web_page(phish_url, site_obj, site_pages, phish_id=-1):
 
 						if len(field_submit) > 0:								
 							btn_pos = await field_submit[0].boundingBox()	
-							event_logger.info('crawl_page_info(%s,%s): Submit Button Clicked by Position :: (%s, %s, %s, %s) ' %(str(count), curr_url, str(btn_pos['x']), str(btn_pos['y']), str(btn_pos['width']), str(btn_pos['height'])))
+							event_logger.info('crawl_page_info(%s,%s): Path Clicked by Position :: (%s, %s, %s, %s) ' %(str(count), curr_url, str(btn_pos['x']), str(btn_pos['y']), str(btn_pos['width']), str(btn_pos['height'])))
 							await field_submit[0].click()							
 							await field_submit[0].hover()								
 							await field_submit[0].click()

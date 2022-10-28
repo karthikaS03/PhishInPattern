@@ -1,6 +1,6 @@
 import site
 import sys
-sys.path.append('/data/Karthika/PhishMesh-karthika-dev/PhishMeshCrawler/')
+sys.path.append('/home/sk-lab/Desktop/PhishProDetector/PhishMeshCrawler/')
 import pandas as pd
 import numpy as np
 import json
@@ -8,7 +8,6 @@ import os
 from database import phish_db_layer
 from matplotlib import pyplot as plt
 from matplotlib.lines import Line2D
-from matplotlib.cm import get_cmap
 from datetime import datetime
 from collections import defaultdict, Counter
 import ruptures as rpt
@@ -18,8 +17,8 @@ import tldextract
 class GraphPlots:
     def __init__(self,):
         self.show_plots = False
-        self.legend_size = 14
-        self.label_size = 18
+        self.legend_size = 12
+        self.label_size = 14
     
     def _get_label_rotation(self, angle, offset):
 
@@ -35,7 +34,7 @@ class GraphPlots:
     def _add_labels(self, angles, values, labels, offset, ax):
     
         # This is the space between the end of the bar and the label
-        padding = 0.1
+        padding = 1
         
         # Iterate over angles, values, and labels, to add all of them.
         for angle, value, label, in zip(angles, values, labels):
@@ -43,7 +42,7 @@ class GraphPlots:
             
             # Obtain text rotation and alignment
             rotation, alignment = self._get_label_rotation(angle, offset)
-            
+
             # And finally add the text
             ax.text(
                 x=angle, 
@@ -55,33 +54,7 @@ class GraphPlots:
                 rotation=rotation, 
                 rotation_mode="anchor"
             ) 
-            
-            
-    def _add_count_labels(self, angles, values, labels, offset, ax):
-    
-        # This is the space between the end of the bar and the label
-        padding = -0.8
-        
-        # Iterate over angles, values, and labels, to add all of them.
-        for angle, value, label, in zip(angles, values, labels):
-            angle = angle
-            
-            # Obtain text rotation and alignment
-            rotation, alignment = self._get_label_rotation(angle, offset)
-            
-            # And finally add the text
-            ax.text(
-                x=angle, 
-                y=value + padding, 
-                s=label, 
-                ha=alignment, 
-                va="center", 
-                fontsize = self.label_size-5,
-                color = 'white',
-                rotation=rotation, 
-                rotation_mode="anchor"
-            ) 
-            
+
     def plot_circular_bar(self, df_data, file_name):
         
         plt.clf()
@@ -93,7 +66,7 @@ class GraphPlots:
         GROUP_LABELS = df_groups["group"].values
         GROUPS_SIZE = df_groups["values"].values
         
-        PAD = 2
+        PAD = 3
         ANGLES_N = len(VALUES) + PAD * len(np.unique(GROUP))
 
         ANGLES = np.linspace(0, 2 * np.pi, num=ANGLES_N, endpoint=False)
@@ -105,7 +78,7 @@ class GraphPlots:
             IDXS += list(range(offset + PAD, offset + size + PAD))
             offset += size + PAD
 
-        fig, ax = plt.subplots(figsize=(8, 8), subplot_kw={"projection": "polar"})
+        fig, ax = plt.subplots(figsize=(8, 7), subplot_kw={"projection": "polar"})
 
         ax.set_theta_offset(offset)
         # ax.set_ylim(-100, 100)
@@ -117,7 +90,7 @@ class GraphPlots:
 
         
         COLORS = [f"C{i}" for i, size in enumerate(GROUPS_SIZE) for _ in range(size)]
-        print(COLORS)
+
         ### Add bars for each value
         ax.bar(
             ANGLES[IDXS], VALUES, width=WIDTH, color=COLORS, 
@@ -126,18 +99,17 @@ class GraphPlots:
 
         ### Add labels to the bars
         self._add_labels(ANGLES[IDXS], VALUES, LABELS, offset, ax)
-        self._add_count_labels(ANGLES[IDXS], VALUES , df_data['count'], offset, ax)
-        
+
         offset = 0 
         legend_bars = []
         i = 0
         for group, size in zip(GROUP_LABELS, GROUPS_SIZE):
             # Add line below bars
             x1 = np.linspace(ANGLES[offset + PAD], ANGLES[offset + size + PAD - 1], num=5)
-            ax.plot(x1, [-0.1]*5, color="#333333")
+            ax.plot(x1, [-0.5]*5, color="#333333")
             
             # Add text to indicate group
-            #ax.text(
+            # ax.text(
             #     np.mean(x1)+0.04, 10, group, color="#333333", fontsize=14, 
             #     fontweight="bold", ha="right", va="top"
             # )
@@ -147,108 +119,37 @@ class GraphPlots:
 
             # # Add reference lines at 20, 40, 60, and 80
             x2 = np.linspace(ANGLES[offset], ANGLES[offset + PAD - 1], num=5)
-            ax.plot(x2, [1] * 5, color="#bebebe", lw=0.8)
             ax.plot(x2, [2] * 5, color="#bebebe", lw=0.8)
-            ax.plot(x2, [3] * 5, color="#bebebe", lw=0.8)
-            ax.plot(x2, [4] * 5, color="#bebebe", lw=0.8)
+            ax.plot(x2, [6] * 5, color="#bebebe", lw=0.8)
+            ax.plot(x2, [8] * 5, color="#bebebe", lw=0.8)
+            ax.plot(x2, [10] * 5, color="#bebebe", lw=0.8)
             
             offset += size + PAD
 
-        ax.legend(legend_bars, GROUP_LABELS, loc="upper right", ncol = 1, fontsize = self.legend_size)
+        ax.legend(legend_bars, GROUP_LABELS, loc="lower left", ncol = 4, fontsize = self.legend_size)
         plt.rc('font', size=34)  
         plt.rc('axes', labelsize=34) 
         plt.rc('legend',fontsize=20) 
-        plt.tight_layout()
-        plt.savefig(file_name,bbox_inches='tight')
- 
-    def plot_bar(self, df_data, file_name, options = {}):
-    	
-    	plt.clf()
-    
-    	df_data.plot.bar(x="labels",y="values", fontsize=12, legend=False)
-    	plt.xticks(range(len(df_data["labels"] )), df_data["labels"])
-    	#plt.yscale('log')
-    	plt.yticks([x for x in range(0, int(df_data['values'].max())+5,10)])
-    	if 'xlabel' in options:
-    	    plt.xlabel(options['xlabel'], fontsize=16)
-    	if 'ylabel' in options:
-    	    plt.ylabel(options['ylabel'], fontsize=16)
-    	plt.tight_layout()
-    	plt.savefig(file_name)
-    	
-    def plot_bar_grouped(self, df_data, file_name):
-    	
-    	plt.clf()
-    	
-    	cmap = get_cmap('Dark2')
-    	print(cmap.colors)
-    	colors = cmap.colors
-    	df_data = df_data.fillna('')
-    	group_colors = {g:colors[i+2] for i,g in enumerate(df_data['group'].unique() ) }
-    	field_color = df_data['group'].apply(lambda x : group_colors[x])
-    	df_data.plot.bar(x="labels",y="values2", rot=0, color = field_color , fontsize=self.label_size)
-    	plt.xticks(range(len(df_data["labels"] )), df_data["labels"], rotation =90)
-    	plt.yscale('log')
-    	plt.tight_layout()
-    	plt.savefig(file_name)
-    	
-    def plot_bar_horizontal(self, df_data, file_name):
-    	
-    	plt.clf() 
-    	df_data = df_data.fillna(0)
-    	df_data2 = df_data.transpose()  	
-    	ax = df_data2.plot.barh(rot=0, fontsize=self.label_size, stacked = True, legend = False, colormap='Dark2', figsize = (10,3))
-    	x_pos = 0
-    	y_pos = 0.5
-    	for ind,row in df_data.iterrows():
-    	    print('index',ind)
-    	    if row['percentage'] < 10:
-    	        y_pos += 0.4
-    	    else:
-    	        y_pos = 0.5
-    	    ax.text(x_pos, y_pos, ind, fontsize=12, ha="left", va="bottom", rotation=0)
-    	    x_pos = x_pos + row['percentage']
-    	
-    	plt.ylim((0,3))
-    	#plt.yticks([])
-    	#plt.xticks([])
-    	plt.box(False)
-    	plt.xlabel('')
-    	plt.tight_layout()
-    	plt.savefig(file_name)
-
-    def plot_bar_group(self, df_data, file_name):
-        plt.clf()
-        grouped = df_data.groupby('group')
-        print(grouped.head())
-        rowlength = grouped.ngroups//2                      
-        fig, axs = plt.subplots(figsize=(9,4), 
-		nrows=2, ncols=rowlength) 
-
-        targets = zip(grouped.groups.keys(), axs.flatten())
-        for i, (key, ax) in enumerate(targets):
-            print(key)
-            df_g = grouped.get_group(key)[['labels','values2']]
-            df_g.plot.bar(x="labels",y="values2", rot=0, fontsize=self.label_size, ax = ax)
-            ax.set_title(key)
-        ax.legend()
-
         plt.tight_layout()
         plt.savefig(file_name)
 
     def plot_donut(self, df_data,fig_name):
 
         plt.clf()
+
         # explosion
         explode = [0.03] * df_data.shape[0]
-        df_data.plot.pie(y=0,legend=None, autopct='%1.1f%%', pctdistance=0.85, explode= explode, colormap = 'viridis', fontsize=self.label_size)         
+        df_data.plot.pie(y=0,legend=None, autopct='%1.1f%%', pctdistance=0.85, explode= explode, colormap = 'Dark2', fontsize=self.label_size) 
+        
         # draw circle
         centre_circle = plt.Circle((0, 0), 0.70, fc='white')
         fig = plt.gcf()
         # Adding Title of chart
         plt.title('')
+        
         # Adding Circle in Pie chart
         fig.gca().add_artist(centre_circle)
+        
         plt.tight_layout()
         plt.savefig(fig_name)
 
@@ -271,41 +172,35 @@ class GraphPlots:
         plt.tight_layout()        
         plt.savefig(fig_name)
 
- 
+       
+
     def plot_bar_subplots(self, df_data, fig_name ):
         
         plt.clf()
-        GROUP = df_data['group']
-        df_data = df_data.drop(['group'], axis=1)
-        COLORS = ['C0', 'C0', 'C0', 'C1', 'C1', 'C1', 'C1', 'C1', 'C1', 'C1', 'C1', 'C1', 'C2', 'C2', 'C3', 'C3', 'C3', 'C3']
-        axes = df_data.plot.bar(subplots=True , sharey=True, sharex=True, figsize=(6,5), legend = False, width=0.3)
+        axes = df_data.plot.bar(subplots=True,colormap = 'Blues', sharey=True, sharex=True)
         # print(ax)
         cols = df_data.columns
 
         plt.yscale('log')
         for c in range(len(cols)):
-            axes[c].set_ylabel('Count', fontsize=8)
-            axes[c].set_xlabel('Fields', fontsize=10)            
-            axes[c].set_title('Page_'+str(len(cols)-c),fontsize=8,y=1.0, pad=-14 )
-            #axes[c].set_yscale('log', base=2)
-            axes[c].set_yticks([10,100,1000])
-            #axes[c].legend(False)
-            #axes[c].legend(fontsize=6,loc="upper right" )
-            axes[c].tick_params(axis = 'both', labelsize = 10)
-            for axbar,color in zip(axes[c].get_children(), COLORS):
-                axbar.set_color(color)
-        
-        #plt.xlabel('Field Categories')
+            axes[c].set_ylabel('Count')
+            axes[c].set_yticks([10, 100, 1000])
+            axes[c].set_title('')
+            axes[c].legend(fontsize=6)
+            axes[c].tick_params(axis = 'both', labelsize = 8)
+
+        # for ax in axes:
+        #     ax.tick_params(axis = 'both', labelsize = 8)
+        plt.xlabel('Field Categories')
         # plt.rc('font', size=14)  
         # plt.rc('axes', labelsize=14) 
-        #plt.xticks(fontsize=10, rotation=45)
-        #plt.yticks(fontsize=8, rotation=0)
+        # plt.xticks(fontsize=10, rotation=90)
+        # plt.yticks(fontsize=8, rotation=0)
         # plt.rc('legend',fontsize=6) 
         # plt.rcParams['xtick.labelsize'] = 6
         # plt.rcParams['ytick.labelsize'] = 6
-        plt.subplots_adjust(hspace=0)
         plt.tight_layout()        
-        plt.savefig(fig_name,bbox_inches='tight')
+        plt.savefig(fig_name)
 
 
 class PaperGraphs:
@@ -314,47 +209,21 @@ class PaperGraphs:
         self.results_dir = '../data/paper_graphs/'        
         self.graph = GraphPlots()
 
-
-
     def plot_fields_count(self, fields_file_path):
         try:
             df_data = pd.read_csv(fields_file_path,header=0)
-            df_data['norm_count'] = np.log10(df_data['count'])      
-            df_data['percentage'] = (df_data['count'] / df_data['count'].sum()) * 100
-            df_data = df_data.round(2)
-            #df_data['percentage'] = df_data['percentage'].apply(lambda x: int(x) )
-            #df_data['labels'] = df_data[['field','count']].apply(lambda x: "{}({})".format(x['field'],x['count']), axis = 1)
-            df_data.rename(columns={"norm_count": "values","field":"labels", "group": "group"}, inplace=True)
+            df_data['norm_count'] = np.log2(df_data['count'])        
+            df_data.rename(columns={"norm_count": "values", "field": "labels", "group": "group"}, inplace=True)
 
             self.graph.plot_circular_bar(df_data,self.results_dir+'field_groups2.pdf')
-
-            #df_data.rename(columns={"count": "values2", "field": "labels", "group": "group"}, inplace=True)
-            #self.graph.plot_bar(df_data,self.results_dir+'field_groups_bar.pdf')
-            
         except Exception as e:
             print('Fields Count ::', e)
-            
-            
 
     def plot_submit_methods(self, submit_methods):
         try:
             dict_data = {k:[v] for k,v in submit_methods.items() if len(k)>2}
             df_data = pd.DataFrame.from_dict(dict_data, orient = 'index')
-            df_data = df_data.reset_index()
-            print(df_data.head())
-            submit_order = ['button','submit_button','visual_button','link_button','form_name', 'form_id', 'input_image', 'path_click','canvas_click','enter_submit']
-                       
-            df_data['percentage'] = (df_data[0] / df_data[0].sum()) * 100
-            df_data['labels'] = df_data['index'].apply(lambda x: x)
-            df_data['values'] = df_data['percentage'].apply(lambda x: x)
-            df_data = df_data.set_index('labels')
-            df_data = df_data.reindex(submit_order) 
-            df_data = df_data.reset_index()
-            print(df_data.head())
-            #df_data['percentage'] = df_data['percentage'].apply(lambda x: int(x) )
-            df_data = df_data.round(2)
-            df_data = df_data.drop([0,'index'], axis = 1)
-            self.graph.plot_bar(df_data,self.results_dir+'submit_methods_bar.pdf', {'xlabel':'Submit Methods', 'ylabel': 'Percentage'})
+            self.graph.plot_donut(df_data,self.results_dir+'submit_methods.pdf')
         except Exception as e:
             print('Submit Methods :: ',e)
 
@@ -362,25 +231,14 @@ class PaperGraphs:
         try:
             dict_data = {k:[v] for k,v in parsed_methods.items() if len(k)>2}
             df_data = pd.DataFrame.from_dict(dict_data, orient = 'index')
-            df_data = df_data.reset_index()
-            df_data['percentage'] = (df_data[0] / df_data[0].sum()) * 100
-            df_data['labels'] = df_data['index'].apply(lambda x: x)
-            df_data['values'] = df_data['percentage'].apply(lambda x: x)
-            
-            self.graph.plot_bar(df_data, self.results_dir+'parsed_methods_bar.pdf', {'xlabel':'Parsed Methods', 'ylabel': 'Percentage'})
+            self.graph.plot_donut(df_data, self.results_dir+'parsed_methods.pdf')
         except Exception as e:
             print('Parsed Methods ::',e)
 
     def plot_multi_phishing_data(self, field_counts):
-        def include_col(col):
-            print(col.max(), col.max()<=10)
-            return col.max()<=10
         try:
             df_fields = pd.DataFrame.from_dict(field_counts)
-            
-            FIELDS_TO_PLOT = {'Identification':'Login','Password':'Login','Email':'Login','Name':'Personal', 'Address':'Personal', 'Phone':'Personal', 'City':'Personal', 'State':'Personal', 'Date':'Personal', 'Question':'Personal', 'Answer':'Personal','Zip':'Personal', 'License':'Social', 'SSN':'Social', 'Card':'Financial', 'CVV':'Financial', 'ExpDate':'Financial', 'Year':'Financial'}
-            
-            df_fields = df_fields.reindex(FIELDS_TO_PLOT.keys())
+
             max_pages = len(field_counts.keys())
             cols = []
             for i in range(max_pages,0,-1):
@@ -388,13 +246,11 @@ class PaperGraphs:
                 if 'Page_'+str(i) not in df_fields.columns:
                     df_fields['Page_'+str(i)] =[np.nan] * df_fields.shape[0]
             df_fields = df_fields[cols]
-            df_fields = df_fields.drop(df_fields.columns[df_fields.apply(lambda col: col.max()<=10)],axis=1)
-            
-            df_fields['group'] = [FIELDS_TO_PLOT.get(x) for x in df_fields.index]
-            #df_fields = df_fields.sort_values(by=['Page_1'], ascending=False)
-            df_fields = df_fields.fillna(0)            
-            print(df_fields.head(20))
-            #self.graph.plot_heatmap(df_fields, self.results_dir+'multi_phishing_fields_count_heatmap.pdf')
+            df_fields = df_fields.sort_values(by=['Page_1'], ascending=False)
+            df_fields = df_fields.fillna(0)
+            df_fields = df_fields.drop(df_fields.columns[df_fields.apply(lambda col: max(col)<=10)],axis=1)
+            print(df_fields.head())
+            self.graph.plot_heatmap(df_fields, self.results_dir+'multi_phishing_fields_count_heatmap.pdf')
             self.graph.plot_bar_subplots(df_fields, self.results_dir+'multi_phishing_fields_count.pdf')
             
         except Exception as e:
@@ -422,7 +278,206 @@ class PaperGraphs:
             print(e)
 
 
+class DataAnalyzer:
+    def __init__(self):
+        self.submit_methods = {}
+        self.parsed_methods = {}
+        self.captchas = defaultdict(set)
+        self.fields_count_page = defaultdict(dict)
+        self.fields_count_all = {}
+        self.double_login_dom_hashes = []
+        self.double_login_fields = set()
+        self.graphs = PaperGraphs()
+        self.domain_extract = tldextract.TLDExtract(include_psl_private_domains=True)
+    
+    def parse_logs(self):
+        try:
+            containers_dir_path = '../PhishMeshController/phish_containers_data/'
+            for record_date in os.listdir(containers_dir_path):
+                if 'container' in record_date:
+                    continue
+                containers_dir_path2 = containers_dir_path+ record_date + '/'
+                print(containers_dir_path2)
+                for d in os.listdir(containers_dir_path2):
+                    # print(d)
+                    logs_dir = os.path.join(containers_dir_path2,d,'data/logs/')
+                    for f in os.listdir(logs_dir):
+                        if 'event' in f:
+                            with open(logs_dir+f,'r') as logf:
+                                for line in logf:
 
+                                    ### find if the line contains the method used to submit the data successfully
+                                    ind = line.find('Successfully submitted via ')
+                                    if ind > 0:                                
+                                        method = line.split(' ')[-2]
+                                        self.submit_methods[method] = self.submit_methods.get(method,0) + 1
+
+                                    ### find if the line contains the method used to identify HTML element
+                                    ind2 = line.find('Valid Category')
+                                    if ind2 > 0:                                
+                                        parsed_method = line[line.find('Parsed Method'):].split(':')[-1]
+                                        if parsed_method in ['Element Name\n', 'Element Id\n', 'placeholder\n']:
+                                            parsed_method = 'HTML Data'
+                                        elif 'OCR' in parsed_method:
+                                            parsed_method = 'OCR'
+                                        elif 'InnerText' in parsed_method:
+                                            parsed_method = 'Other HTML'
+                                        self.parsed_methods[parsed_method] = self.parsed_methods.get(parsed_method,0) + 1
+                                    
+                                    captcha_ind = line.find('Known Captcha')
+                                    if captcha_ind > 0:                                        
+                                        self.captchas['Known Captcha'].add(d)
+                                    elif line.find('Captcha') > 0 and line.find('Clicked')>0 and d not in self.captchas['Known Captcha']:
+                                        captcha_type = [w for w in line.split(' ') if 'Captcha' in w][0]
+                                        self.captchas[captcha_type].add(d)
+        except Exception as e:
+            print(e)
+
+    def _record_field_count(self, row):
+        # print(row)
+        site_fields = row['site_elements'].split(' && ')
+        page_counts = row['page_no'].split(' && ')
+        dom_hashes = row['dom_hashes'].split(' && ')
+        dom_hash_count = Counter(dom_hashes)
+        seen_dom_hashes = set()
+        repeated_pages_count = 0
+
+        for page_no, page_fields,dom_hash in zip(page_counts,site_fields,dom_hashes):
+            ### If a page is repeated more than twice, then it is not a double login, so ingore the repeated pages
+            if dom_hash_count[dom_hash]>2 and dom_hash in seen_dom_hashes:                    
+                    repeated_pages_count += 1                    
+                    continue
+            page_no = int(page_no) - repeated_pages_count
+            
+
+            ### Record field only for unique pages including double logins
+            for f in page_fields.split('--'):
+                if 'Unkno' in f:
+                    f = 'Other'
+                f = f.replace(' ','')                
+                seen_dom_hashes.add(dom_hash)                
+                p_num = 'Page_'+str(page_no+1)
+                self.fields_count_page[p_num][f] = self.fields_count_page[p_num].get(f,0)+1
+                self.fields_count_all[f] = self.fields_count_all.get(f,0)+1
+                
+    def _get_SLDs(self,page_urls):
+
+        
+        page_domains = []
+
+        for url in page_urls.split(' && '):
+            ext = self.domain_extract(url)
+            page_domains.append(ext.domain+'.'+ ext.suffix)
+        
+        return  ' && '.join(page_domains)
+
+    def _has_double_login(self, row):
+        
+        page_titles = row['titles'].split(' && ')
+        dom_hashes = row['dom_hashes'].split(' && ')
+        dom_elems = row['elem_names'].split(' && ')
+        elems_count = Counter(dom_elems)
+        titles_count = Counter(page_titles)
+        double_logins = []
+        dom_hash_index = defaultdict(list)
+
+        for idx, dom_hash in enumerate(dom_hashes):
+            dom_hash_index[dom_hash].append(idx)
+        
+        ### Check if dom_hash count is 2 and the respective title count is 2 and it is not the last page
+        for dom_hash,idxs in dom_hash_index.items():
+            if len(idxs) == 2:
+                if int(idxs[1]) - int(idxs[0]) == 1 and dom_hashes[-1] != dom_hash and elems_count[dom_elems[idxs[0]]] == 2:
+                    double_logins.append(dom_hash)
+        
+        self.double_login_dom_hashes = self.double_login_dom_hashes + double_logins
+
+        return len(double_logins)>0
+
+    def _has_click_through(self, row):
+        
+        dom_hashes = row['dom_hashes'].split(' && ')
+        
+        site_fields = row['site_elements'].split(' && ')
+
+        click_through = False
+
+        ### TODO: Ensure noinp appears before any information is requested not after. 
+
+        ### First, check if there are more pages that request input other than the click-through page
+        if len(set(site_fields))> 1:
+            ind = 0
+            for  page_fields,dom_hash in zip(site_fields, dom_hashes):
+                ### Check if the page is a click-through page and that it isn't the last page and that noinp appears before any information is requested not after. 
+                if page_fields.replace('NoInp','') == '' and dom_hash != dom_hashes[-1] and len(set(site_fields[ind:]))>1:
+                    click_through = True
+                    # print(page_no, site_fields, dom_hashes)
+                    break
+                ind += 1
+
+        return click_through
+
+    def _has_termination_message(self, row):
+        
+        site_fields = row['site_elements'].split(' && ')        
+        return site_fields[-1] == 'NoInp' and len(set(site_fields))>1
+
+    def parse_multi_phishing_data(self):
+
+        multi_results = phish_db_layer.fetch_multi_phishing_data()
+        df_multi_data = pd.DataFrame(multi_results , columns = ['site_id','page_count','title_count','dom_hash_count','elements_count','url_count','site_elements','titles','elem_names','images','page_no', 'page_domains','dom_hashes'])
+        self.fields_count_page = defaultdict(dict)
+        df_multi_data['sld_domains'] = df_multi_data['page_domains'].apply(lambda x: self._get_SLDs(x))
+        df_multi_data[['site_elements','page_no','dom_hashes']].apply(lambda x: self._record_field_count(x), axis =1)
+        df_multi_data['has_double_login'] = df_multi_data[['titles','elem_names','dom_hashes']].apply(lambda x: self._has_double_login(x), axis = 1)
+        df_multi_data['has_click_through'] = df_multi_data[['site_elements','page_no','dom_hashes']].apply(lambda x: self._has_click_through(x), axis = 1)
+        df_multi_data['has_termination_message'] = df_multi_data[['site_elements','page_no','dom_hashes','sld_domains']].apply(lambda x: self._has_termination_message(x), axis = 1)
+        df_multi_data['has_end_domain_changed'] = df_multi_data['sld_domains'].apply(lambda x: x.split(' && ')[0] != x.split(' && ')[-1])
+
+        df_multi_data.to_csv('../data/multi_phishing_data.csv', index = False)
+
+        print(df_multi_data.describe() )
+
+        print('\n\n Count of Double Login ::', df_multi_data[df_multi_data['has_double_login'] == True]['has_double_login'].count())
+        print('Count of Click Through ::', df_multi_data[df_multi_data['has_click_through'] == True]['has_click_through'].count())
+        print('Count of Termination Patterns ::', df_multi_data[df_multi_data['has_termination_message'] == True]['has_termination_message'].count())
+        print('Count of Termination and Domain Navigations ::', df_multi_data[(df_multi_data['has_end_domain_changed'] == True) & (df_multi_data['has_termination_message'] == True) ]['has_end_domain_changed'].count())
+        print('Count of Domain Navigations ::', df_multi_data[df_multi_data['has_end_domain_changed'] == True]['has_end_domain_changed'].count())
+        
+
+    def parse_nonmulti_phishing_data(self):
+
+        nonmulti_results = phish_db_layer.fetch_nonmulti_phishing_data()
+        df_multi_data = pd.DataFrame(nonmulti_results , columns = ['site_id','page_count','title_count','dom_hash_count','elements_count','url_count','site_elements','titles','elem_names','images','page_no', 'page_domains','dom_hashes'])
+        self.fields_count_page = defaultdict(dict)
+        df_multi_data['sld_domains'] = df_multi_data['page_domains'].apply(lambda x: self._get_SLDs(x))
+        df_multi_data[['site_elements','page_no','dom_hashes']].apply(lambda x: self._record_field_count(x), axis =1)
+
+        print(df_multi_data.describe())
+
+    def plot_graphs(self):
+
+        fields_file_path = '../data/fields_groups_count.csv'
+        self.graphs.plot_fields_count(fields_file_path)
+    
+        self.parse_logs()
+        self.graphs.plot_submit_methods(self.submit_methods)
+        self.graphs.plot_parsed_methods(self.parsed_methods)
+        # print(self.captchas)
+        print({k:len(v) for k,v in self.captchas.items()})
+        self.parse_multi_phishing_data()
+        self.graphs.plot_multi_phishing_data(self.fields_count_page)
+
+        self.parse_nonmulti_phishing_data()
+        self.graphs.plot_nonmulti_phishing_data(self.fields_count_page)
+        print(self.fields_count_all)
+
+
+
+if __name__ == '__main__':
+
+    analyzer_obj = DataAnalyzer()
+    analyzer_obj.plot_graphs()
 
 
 

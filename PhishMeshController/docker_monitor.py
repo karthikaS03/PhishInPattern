@@ -2,11 +2,9 @@ import docker
 import os
 import time
 import datetime
-import tarfile
 from docker_config import *
 import sys
 from datetime import date
-from utils import download_file
 
 # sys.path.append("../SWSec_Analysis/database")
 
@@ -28,12 +26,12 @@ def get_time():
 	currentDT = datetime.datetime.now()
 	return '['+currentDT.strftime("%Y-%m-%d %H:%M:%S") +'] '
 
-def initiate_container(url, id, script_name, iteration_count,  container_timeout, url_det):	
+def initiate_container(url, id, script_name, iteration_count,  container_timeout):#, port ):	# add .port
     try:
         ## create and setup container ##
         get_logger('container_'+id, 1).info(get_time() + 'container_'+id+' creating!!')
-        container_id  = client.containers.create(image=docker_image,name='container_'+id,volumes = vols,
-                                                shm_size='1G', user=docker_user, #network='phishpro-network',
+        container_id  = client.containers.create(image=docker_image, name='container_'+id, volumes = vols,
+                                                shm_size='1G', user=docker_user,  # ports = {'8080': port} ,  #network='host', #
                                                 publish_all_ports=True, detach=False)
         container = client.containers.get('container_'+str(id))
         container.start()
@@ -42,12 +40,12 @@ def initiate_container(url, id, script_name, iteration_count,  container_timeout
         ## wait for display to be activated ##
         time.sleep(10)
         ## Exeecute the browser automation script
-        execute_script(url, id, script_name,  iteration_count, container_timeout-100, url_det)
+        execute_script(url, id, script_name,  iteration_count, container_timeout-100)
     except Exception as e:
         print(e)
         get_logger('container_'+id).info(e) 
 
-def execute_script(url, id, script_name,  iteration_count, container_timeout, url_det):
+def execute_script(url, id, script_name,  iteration_count, container_timeout):
     try:	
         ## Execute javascript file
         get_logger('container_'+id).info(get_time() +'container_'+id+': Executing crawler script')
@@ -62,11 +60,11 @@ def execute_script(url, id, script_name,  iteration_count, container_timeout, ur
         # print('timeout started')
         # time.sleep(container_timeout) 
         get_logger('container_'+id).info(get_time() +'container_'+id+': Execution complete!!')	
-        export_container_logs(id,iteration_count, url_det)
+        export_container_logs(id,iteration_count)
     except Exception as e:
         get_logger('container_'+id).info('Exception ')
         get_logger('container_'+id).info(e)
-        export_container_logs(id,iteration_count, url_det)
+        export_container_logs(id,iteration_count)
 
 def stop_container(id):
     try:
@@ -86,7 +84,7 @@ def remove_containers():
         try:
             for c in client.containers.list():
                 # print(c.name)
-                if 'Phish' not in c.name:
+                if 'phish' in c.name:
                     # print('Removing')
                     c.stop()
                     c.remove()
@@ -103,8 +101,7 @@ def resume_container(url, id, script_name, iteration_count, container_timeout):
         ##   Open a blank page on the browser and wait for notifications 
         execute_script(url,id, script_name, iteration_count, container_timeout-100)
 
-
-def export_container_logs(id,count, url_det):
+def export_container_logs(id,count):
     try:
         # print(export_path)
         print('Exporting Container :: '+id)
@@ -123,25 +120,14 @@ def export_container_logs(id,count, url_det):
             bits, stat = container.get_archive('/home/pptruser/data/')
             for chunk in bits:
                 f.write(chunk)
-        t = tarfile.open(dir_path+'data.tar')                
-        t.extractall(path= dir_path)
-        t.close()
-        os.remove(dir_path+'data.tar') 
-        
-        ### download the site's screenshot provided by openphish
-        file_url = url_det['screenshot']
-        if file_url !=None and 'http' in file_url:
-            download_file(file_url, dir_path + '/data/openphish_screenshot.png' )
 
-        ### download the phishkit if provided by openphish
-        file_url = url_det['phishkit']
-        if file_url !=None and 'http' in file_url:            
-            download_file(file_url, dir_path + '/data/openphish_phishkit.zip' )
-        
     except Exception as e:
-        get_logger('container_'+id).info(e)         
+        print(e)
+        get_logger('container_'+id).info('Export Container:: Exception!!')
+        get_logger('container_'+id).info(e)
+        
     
-    
+
 
 def docker_prune():
     ## Remove containers that are unused  ##
@@ -153,8 +139,8 @@ def docker_prune():
 
 def test():
     remove_containers()
-    #docker_prune()
-    initiate_container('http://446884cox.weebly.com/','phishmesh_teste3202', 'crawl_page.py','0', 1200 )   
+    initiate_container('https://recaptcha-demo.appspot.com/recaptcha-v2-checkbox.php','phishmesh_test222', 'test_captcha_click.py','0', 600 ,'8097'  )   
+    initiate_container('https://recaptcha-demo.appspot.com/recaptcha-v2-checkbox.php','phishmesh_test322', 'test_captcha_click.py','0', 600 , '8085' ) 
    
    
     

@@ -6,8 +6,10 @@ project_dir = os.getcwd()
 docker_image = 'phishmesh_puppeteer:ver2'
 docker_user = 'pptruser'
 docker_container_home = '/home/pptruser/'
-vols ={  #project_dir + '/shared' :{'bind':docker_container_home + 'app/PhishMeshCrawler','mode':'rw'}, 
-         project_dir + '/config' :{'bind':docker_container_home + 'app/PhishMeshCrawler/config','mode':'ro'}}
+vols ={ 
+		project_dir + '/config' :{'bind':docker_container_home + 'app/PhishMeshCrawler/config','mode':'ro'}
+		# project_dir + '/demo' : { 'bind': docker_container_home + 'app/PhishMeshCrawler/', 'mode': 'rw' }
+	  }
 ''', 
 	docker_shared_dir_root + '/logs'          :{'bind':docker_container_home + 'logs','mode':'rw'},
 	        docker_shared_dir_root + '/screenshots'   :{'bind':docker_container_home + 'screenshots','mode':'rw'},
@@ -18,7 +20,7 @@ vols ={  #project_dir + '/shared' :{'bind':docker_container_home + 'app/PhishMes
 collection_script   = 'crawl_page.py'
 
 
-ANALYSIS_MAX_CONTAINERS = 25
+ANALYSIS_MAX_CONTAINERS = 10
 ANALYSIS_TIMEOUT = 1200  # 900 ->15 mins
 
 

@@ -111,7 +111,7 @@ def plot_pagewise_fields(file_path, d_fname):
     df_fields = df_fields.reindex(all_fields)
     
 
-    ax = df_fields.plot.bar(subplots=True, colormap = 'rainbow', sharey=True, sharex=True)
+    ax = df_fields.plot.bar(subplots=True, colormap = 'Dark2', sharey=True, sharex=True)
     
     # ax[0].set_ylim((0,200))
     
@@ -136,22 +136,22 @@ if __name__ =='__main__':
     file_path = '../data/data_pages_multi_2.csv'
     plot_pagewise_fields(file_path,'multi_2')
 
-    file_path = '../data/data_pages_single.csv'
-    plot_pagewise_fields(file_path,'single_2')
+    # file_path = '../data/data_pages_single.csv'
+    # plot_pagewise_fields(file_path,'single_2')
 
-    # file_path = '../data/data_pages_top.csv'
-    # plot_pagewise_fields(file_path,'top')
+    # # file_path = '../data/data_pages_top.csv'
+    # # plot_pagewise_fields(file_path,'top')
 
-    # all_fields_count.pop('Other')
-    print(all_fields_count)
-    df_fields = pd.DataFrame.from_dict(all_fields_count, orient='index')
-    df_fields = df_fields.reset_index()
-    df_fields.columns = ['Field Category','Count']
-    df_fields.set_index('Field Category')
-    df_fields = df_fields.sort_values(by=['Count'], ascending=False)
-    print(df_fields)
+    # # all_fields_count.pop('Other')
+    # print(all_fields_count)
+    # df_fields = pd.DataFrame.from_dict(all_fields_count, orient='index')
+    # df_fields = df_fields.reset_index()
+    # df_fields.columns = ['Field Category','Count']
+    # df_fields.set_index('Field Category')
+    # df_fields = df_fields.sort_values(by=['Count'], ascending=False)
+    # print(df_fields)
 
-    df_fields.plot.barh(y='Count', x = 'Field Category')
-    plt.tight_layout()
-    # plt.show(block=True)
-    plt.savefig('../data/paper_graphs/fields_count.pdf')
+    # df_fields.plot.barh(y='Count', x = 'Field Category')
+    # plt.tight_layout()
+    # # plt.show(block=True)
+    # plt.savefig('../data/paper_graphs/fields_count.pdf')

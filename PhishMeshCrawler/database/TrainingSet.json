@@ -26,7 +26,7 @@
   },
   {
     "category": "Date", 
-    "texts": ["Date" , "Date of Birth", "Birth", "DOB" ] 
+    "texts": ["Date" , "Date of Birth", "Birth", "DOB", "DD/MM/YYYY" ] 
   },
   {
     "category": "Month", 
@@ -46,15 +46,15 @@
   },
   {
     "category": "Question", 
-    "texts": ["Security Question" ]
+    "texts": ["Security Question" , "Question", "Ask your Question"]
   },
   {
     "category": "Answer", 
-    "texts": ["Security Answer" ]
+    "texts": ["Security Answer" , "Answer", "Enter Answer"]
   },
   {
     "category": "Identification", 
-    "texts": ["Identification Number", "Identification", "Id" ]
+    "texts": ["Identification Number", "Identification", "Id" , "License", "Driver License", "Driver"]
   },
   {
     "category": "Card", 
@@ -79,5 +79,13 @@
   {
     "category": "Zip", 
     "texts": ["Zip code", "Postal Zip" , "Pin Code" ]
+  },
+  {
+    "category": "Search", 
+    "texts": ["search", "search for "  ]
+  },
+  {
+    "category": "Username", 
+    "texts": ["username", "user" , "userid", "memberid" ]
   }
 ]

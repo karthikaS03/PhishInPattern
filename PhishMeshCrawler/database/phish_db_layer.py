@@ -357,42 +357,6 @@ def fetch_openphish_urls(count=100):
     print(e)
     logger.info('Exception occured in fetch_openphish_urls: '+str(e))
 
-def fetch_unverified_page_urls(count=5000):
-  try:
-    session = create_db_session()
-    phish_urls = []
-    for s in session.query(Pages).with_entities(Pages.page_url).filter(Pages.is_phishing_url==None).distinct().limit(count):
-      url = s.page_url
-      phish_urls.append(s.page_url)
-    session.commit()
-    session.close()
-    return phish_urls
-  except Exception as e:
-    print(e)
-    logger.info('Exception occured in fetch_unverified_page_urls: '+str(e))
-
-def update_page_phishing_status(page_id, page_status=False):
-  try:
-    session = create_db_session()    
-    p = session.query(Pages).get(page_id)
-    p.is_phishing_url = page_status
-    session.commit()
-    session.close()
-  except Exception as e:
-    logger.info('Exception occured in update_page_phishing_status: '+str(e))
-
-def update_page_phishing_status_url(page_url, phishing_status=False):
-  try:
-    session = create_db_session()    
-    for s in session.query(Pages).filter(Pages.page_url==page_url).all():
-        s.is_phishing_url = phishing_status
-    session.commit()
-    session.close()
-  except Exception as e:
-    print(e)
-    logger.info('Exception occured in update_page_phishing_status: '+str(e))
-
-
 def get_site_id(phish_id):
   try:
     session = create_db_session()
@@ -640,3 +604,5 @@ def update_gsb_table(url, result):
   except Exception as e:
     print(e)
     logger.info('Exception occured in update_gsb_table(): '+str(e))
+
+   

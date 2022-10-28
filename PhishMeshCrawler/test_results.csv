@@ -1,0 +1,508 @@
+,element_name,element_tag,element_html_id,element_parsed_text,Target,Predecited,res
+0,cpf,INPUT,cpf,CPF,unknown,unknown,True
+1,q,INPUT,,Enter Product Name,name,name,True
+2,q,INPUT,,,unknown,unknown,True
+3,q,INPUT,,Pe eps la ype et es,unknown,unknown,True
+4,q,INPUT,,@g Include screenshot P,unknown,unknown,True
+5,loginfmt,INPUT,,     ,unknown,unknown,True
+6,email,INPUT,m_login_email,email,email,email,True
+7,iduserLoginId,INPUT,iduserLoginId,iduserLoginId,identification,unknown,True
+8,NameOnCard,INPUT,NameOnCard,NameOnCard,name,name,True
+9,loginfmt,INPUT,i0116,Password,password,password,True
+10,email,INPUT,email,email,email,email,True
+11,email,INPUT,,email,email,email,True
+12,_u159967888729301818,INPUT,input-159967888729301818,input-159967888729301818,unknown,unknown,True
+13,ziip,INPUT,user-id,Jser ID,username,unknown,False
+14,ziip,INPUT,user-id,Online Banking,card,unknown,False
+15,zip,INPUT,zip,zip,zip,zip,True
+16,username,INPUT,,username,username,username,True
+17,user1,INPUT,,Usuario,unknown,unknown,True
+18,pin,INPUT,Editbox1,Clave tarjeta de dbito,unknown,unknown,True
+19,correo,INPUT,,Correo electronico,unknown,unknown,True
+20,temail,INPUT,myEmail,temail,email,email,True
+21,numcpf,INPUT,numcpf,CPF,unknown,unknown,True
+22,numc,INPUT,numc,numc,unknown,unknown,True
+23,ud,INPUT,,Username,username,username,True
+24,emailpass,INPUT,emailpass,emailpass,email,email,False
+25,password,INPUT,password,password,password,password,True
+26,ai,INPUT,ai,"Email, phone or skype",email,email,False
+27,loginfmt,INPUT,,,unknown,unknown,True
+28,numc,INPUT,numc,numero do cartao,unknown,unknown,True
+29,keys,INPUT,edit-keys,JS update: We re Keeping the UK connected. Vespite best efforts some services may |,unknown,date,True
+30,keys,INPUT,edit-keys,us update: We re Keeping the UK connected. Vespite best efforts some services may,unknown,date,True
+31,keys,INPUT,edit-keys,Search,unknown,search,False
+32,_u363830618480137201,INPUT,input-363830618480137201,sername *,name,name,True
+33,_u363830618480137201,INPUT,input-363830618480137201,Ricardo Carter,unknown,card,False
+34,identifier,INPUT,identifierId,identifier,identification,unknown,False
+35,identifier,INPUT,recoveryIdentifierId,identifier,identification,unknown,False
+36,firstName,INPUT,firstName,firstName,name,name,True
+37,,INPUT,username,username,username,username,True
+38,fname,INPUT,fnameInput,fname,name,name,True
+39,userfile,INPUT,fnameInput,fnameInput,name,name,True
+40,rdata,INPUT,o-search-input-ribbon, ,unknown,unknown,True
+41,_u973119635908250223,INPUT,input-973119635908250223,input-973119635908250223,unknown,unknown,True
+42,_u973119635908250223,INPUT,input-973119635908250223,default |,unknown,unknown,True
+43,keyword,INPUT,,keyword,unknown,unknown,True
+44,ec2e59c0-d1f7-11eb-8c42-a37bf3f22870,INPUT,,Nama Facebook *,unknown,unknown,True
+45,uname,INPUT,txtEmpName,uname,name,name,True
+46,uskkes1,INPUT,,"Email, phone, or skype",email,email,False
+47,uskkes1,INPUT,,steven59@gmail.com,email,unknown,True
+48,username,INPUT,username,username,username,username,True
+49,session_key,INPUT,username,username,username,username,True
+50,u1,INPUT,username,username,username,username,True
+51,ksfmn,INPUT,usuario,Usuario,unknown,unknown,True
+52,cmrkn,INPUT,co,Ingresá tu correo electrónico,unknown,unknown,True
+53,nmbf,INPUT,n,Ej.: 123456xxxxxx1234,unknown,unknown,True
+54,term,INPUT,,Search,unknown,search,False
+55,first_name,INPUT,nom,first_name,name,name,True
+56,username,INPUT,email,username,username,username,True
+57,first_name,INPUT,,first_name,name,name,True
+58,uid,INPUT,searchThreads,uid,identification,unknown,False
+59,,INPUT,Field100,Saisissez votre mot de passe,password,password,True
+60,firsname,INPUT,fname,firsname,name,name,True
+61,lastname,INPUT,lname,lastname,name,name,True
+62,CName,INPUT,CName,CName,name,name,True
+63,user,INPUT,,Email address or phone number,email,email,False
+64,password,INPUT,,password,password,password,True
+65,username,INPUT,val_cel_identifiant,username,username,username,True
+66,user,INPUT,i0116,Email Address,email,email,True
+67,email,INPUT,email_field,email,email,email,True
+68,login-email,INPUT,login-email,login-email,email,email,True
+69,pet,INPUT,pet,Email address,email,email,True
+70,uskkes1,INPUT,,mpearson@gmail.com,email,unknown,True
+71,username,INPUT,ai,username,username,username,True
+72,s,INPUT,,Home MyAccount Instagram Cart Shop_ Asrticles AboutUs ContactUs @,unknown,unknown,False
+73,s,INPUT,,Home MyAccount Instagram Cart Shop _ Articles AboutUs ContactUs @,unknown,unknown,False
+74,pass,INPUT,,pass,password,password,True
+75,fullname,INPUT,,fullname,name,name,True
+76,rdata,INPUT,o-search-input,// Show all views except viewName,name,name,True
+77,s,INPUT,,Search...,unknown,search,False
+78,,INPUT,,Your answer,answer,answer,True
+79,,INPUT,exampleInputEmail1,exampleInputEmail1,email,email,True
+80,Email,INPUT,email-input,Email,email,email,True
+81,email,INPUT,em,email,email,email,True
+82,Captcha,INPUT,Captcha,Enter the numbers above seen,phone,unknown,False
+83,,INPUT,,Tin,unknown,unknown,True
+84,loginform,INPUT,loginform.login,User - ID - Client-No.,identification,unknown,False
+85,,INPUT,,et,unknown,unknown,True
+86,,INPUT,,st,unknown,unknown,True
+87,1Df2n0tlYxuvJER8F79h,INPUT,,ankleitzahl - Name Ihrer Bank,name,name,True
+88,,INPUT,,ankleitzahl - Name Ihrer Bank,name,name,True
+89,identifier,INPUT,identifierId,Email or phone,email,email,False
+90,log,INPUT,user_login,Username - Email,username,username,True
+91,user,INPUT,user,Enter your email address.,email,email,True
+92,searchTerm,INPUT,search-query,Services Ideas,unknown,unknown,True
+93,sgE-6443664-1-3,INPUT,sgE-6443664-1-3-element,--mail Address: *,email,unknown,True
+94,email,INPUT,jp-carousel-comment-form-email-field,email,email,email,True
+95,,INPUT,query_header,Search,unknown,search,False
+96,,INPUT,,Last Name,name,name,True
+97,,INPUT,inputStateCity,inputStateCity,city,state,False
+98,,INPUT,autocomplete,"City, Country",city,city,False
+99,,INPUT,,Captcha code,zip,captcha,False
+100,autoemail,INPUT,autoemail_1,autoemail,email,email,True
+101,,INPUT,, gee,unknown,unknown,True
+102,,INPUT,zipcode-location-form-input,zipcode-location-form-input,zip,zip,True
+103,q,INPUT,,Login under member profile to search classes,unknown,search,False
+104,q,INPUT,search,Search job title or keyword,unknown,search,False
+105,q,INPUT,,Search OneWalmart,unknown,search,False
+106,q,INPUT,,Describe your issue,unknown,unknown,True
+107,,INPUT,,,unknown,unknown,True
+108,accountType,INPUT,accountType-field,accountType,card,unknown,False
+109,userLoginId,INPUT,id_userLoginId,Email or phone number,email,phone,False
+110,ssn,INPUT,ssn-field,ssn,ssn,ssn,True
+111,vendor-search-handler,INPUT,vendor-search-handler,Search...,unknown,search,False
+112,username,INPUT,loginUsername,username,username,username,True
+113,q,INPUT,header-search-bar,search Reddit,unknown,search,False
+114,,INPUT,search_input_element,Search eBay Help...,unknown,search,False
+115,_nkw,INPUT,gh-ac,Enter your search keyword,unknown,search,False
+116,_nkw,INPUT,gh-ac,Search for anything,unknown,search,False
+117,,INPUT,HeaderSearchInput,Search,unknown,search,False
+118,q,INPUT,header-search-bar,Idit,unknown,unknown,True
+119,q,INPUT,cli_shellHeaderSearchInput,Account,card,unknown,False
+120,terms,INPUT,site-search-input,Search,unknown,search,False
+121,LoginForm[username],INPUT,LoginForm_username,LoginForm[username],username,username,True
+122,username,INPUT,,User ID,identification,unknown,False
+123,Office,INPUT,,Office:,unknown,unknown,True
+124,,INPUT,login-username,login-username,username,username,True
+125,,INPUT,tw-5e5473586321b6b95ddb1ea2666c9801,tw-5e5473586321b6b95ddb1ea2666c9801,unknown,unknown,True
+126,,INPUT,email,email,email,email,True
+127,user_code,INPUT,,user_code,zip,unknown,False
+128,s,INPUT,searchform-1,Search the site ...,unknown,search,False
+129,fm-login-id,INPUT,fm-login-id,fm-login-id,identification,unknown,False
+130,,INPUT,,Search for questions...,question,question,True
+131,SearchText,INPUT,search-key,I'm shopping for...,unknown,unknown,True
+132,SearchText,INPUT,search-key,stradic ci4,unknown,unknown,True
+133,query,INPUT,query,Search,unknown,search,False
+134,cardNumber,INPUT,card_number_0,cardNumber,card,card,True
+135,cardNumber,INPUT,card_number_0,surity Code,zip,unknown,False
+136,loca,INPUT,loc,"Enter valid store number, or 9100 for corp",unknown,unknown,True
+137,keyword,INPUT,cws_quickjobsearch_keywords,keyword,unknown,unknown,True
+138,username,INPUT,usernameModal,username,username,username,True
+139,keyword,INPUT,cws_jobsearch_keywords,keyword,unknown,unknown,True
+140,username,INPUT,MHP1138-username,username,username,username,True
+141,q,INPUT,,Search foxnews.com,unknown,search,False
+142,file,INPUT,fileSelector,Loading,unknown,unknown,True
+143,FirstName,LIGHTNING-INPUT,,FirstName,name,name,True
+144,cardNumber,INPUT,card_number_0,curity Code,cvv,unknown,True
+145,domProductQueryName,INPUT,search-input,domProductQueryName,name,name,True
+146,searchTerm,INPUT,search,Search,unknown,search,False
+147,username,INPUT,username,Email or mobile phone,email,phone,False
+148,emailAddress,INPUT,emailAddress,emailAddress,email,email,True
+149,query,INPUT,wuSearch,Search Locations,unknown,search,False
+150,ctl00$ph$loginControl$txtUserName,INPUT,ctl00_ph_loginControl_txtUserName,ctl00$ph$loginControl$txtUserName,username,username,True
+151,txtSearch,INPUT,txtSearch-searchmenu-undefined-13684,search menu,unknown,search,False
+152,txtSearch,INPUT,txtSearch-searchmenu-undefined-59925,search menu,unknown,search,False
+153,txtSearch,INPUT,txtSearch-searchmenu-undefined-1203,search menu,unknown,search,False
+154,,INPUT,,Search location,unknown,search,False
+155,ctl00$Main$UserName,INPUT,Main_UserName,ctl00$Main$UserName,username,username,True
+156,query,INPUT,,Search Location,unknown,search,False
+157,,INPUT,159:00:00,Search for answers to your questions Ny] ce,question,question,False
+158,,INPUT,159:00:00,Search for answers to your questions,question,question,False
+159,,INPUT,search-box-input,"Enter an address, neighborhood, city, or ZIP code",address,zip,False
+160,,INPUT,,Search,unknown,search,False
+161,loginId,INPUT,fm-login-id,loginId,identification,unknown,False
+162,q,INPUT,search__label-small,Mobile Search,phone,unknown,False
+163,,INPUT,,Enter a location,city,unknown,False
+164,SearchText,INPUT,,silicone resin molds,unknown,unknown,True
+165,SearchText,INPUT,,eyelash vendor customized boxes,unknown,unknown,True
+166,SearchText,INPUT,,What are you looking for...,unknown,unknown,True
+167,s,INPUT,s,Search Heavy,unknown,search,False
+168,LoginForm[email],INPUT,loginform-email,LoginForm[email],email,email,True
+169,,INPUT,,Search Apps...,unknown,search,False
+170,s_username,INPUT,s_username,s_username,username,username,True
+171,txtCompNum,INPUT,txtCompNum,Company No.*,unknown,unknown,True
+172,,INPUT,s2id_autogen1,Select Your State or Jurisdiction,state,state,True
+173,firstname,INPUT,first_name,firstname,name,name,True
+174,q,INPUT,,Search accounts,card,unknown,True
+175,email,INPUT,TikTok_Ads_SSO_Login_Email_Input,email,email,email,True
+176,loginform:username,INPUT,loginform:username,loginform:username,username,username,True
+177,user,INPUT,,username,username,username,True
+178,q,INPUT,search_input1,Search Tax,unknown,search,False
+179,,INPUT,ny-global-search,Search,unknown,search,False
+180,16273400000000,INPUT,,O Mie,unknown,unknown,True
+181,,INPUT,account-1369374231512,account-1369374231512,card,unknown,False
+182,username,INPUT,,Enter your phone,phone,phone,True
+183,author,INPUT,author,Name*,name,name,True
+184,s,INPUT,,Search..,unknown,search,False
+185,txtEmailAddr,INPUT,txtEmailAddr,Email or usernameEmail or username,username,username,True
+186,username,INPUT,,Email address,email,email,True
+187,search,INPUT,faqSearchAskInput,What would you like to know?,unknown,unknown,True
+188,,INPUT,,Location,city,unknown,False
+189,q,INPUT,,) Tripadvisor,unknown,unknown,True
+190,s,INPUT,search-field,Type to Search,unknown,search,False
+191,s,INPUT,s,Search,unknown,search,False
+192,q,INPUT,,Search for a company,unknown,search,False
+193,,INPUT,input-site,Enter a site. For example: mysite.com,unknown,unknown,True
+194,q,INPUT,,search,unknown,search,False
+195,user.email_address,INPUT,email,email,email,email,True
+196,,INPUT,navbar-search-input,Search,unknown,search,False
+197,keyword,INPUT,globalSearchInputField,Search or enter web ID,identification,search,False
+198,,INPUT,,"Job title, skill, keyword",unknown,unknown,True
+199,primary-email,INPUT,primary-email-0,primary-email,email,email,True
+200,,INPUT,flist,Filter names..,name,name,True
+201,q,INPUT,input-search,Pirate Search,unknown,search,False
+202,q,INPUT,search_input,Pirate Search,unknown,search,False
+203,,INPUT,cardNumber2,cardNumber2,card,card,True
+204,searchText,INPUT,,Search,unknown,search,False
+205,pf.username,INPUT,username,pf.username,username,username,True
+206,keyword,INPUT,search-nav-input,keyword,unknown,unknown,True
+207,cst_email,INPUT,createEmailInput,cst_email,email,email,True
+208,cst_email,INPUT,loginEmailInput,cst_email,email,email,True
+209,s,INPUT,searchform-1,Search The Gateway Pundit,unknown,search,False
+210,nav_search_input,INPUT,nav_search_input-desktop,Search,unknown,search,False
+211,,INPUT,bcSearchInput,Search,unknown,search,False
+212,acsb_search,INPUT,,Search the online dictionary...,unknown,search,False
+213,entry.1912399381,INPUT,,| Enter Customer # - Member ID,identification,unknown,False
+214,user,INPUT,user,Email:,email,email,True
+215,query,INPUT,,Search...,unknown,search,False
+216,dialogTemplate-dialogForm-login-name1,INPUT,dialogTemplate-dialogForm-login-name1,dialogTemplate-dialogForm-login-name1,name,name,True
+217,membername,INPUT,membername,membername,name,name,True
+218,,INPUT,,"Symbols, authors, keywords",unknown,unknown,True
+219,,INPUT,hd-auto,"Search by symbol, author, keyword...",unknown,search,False
+220,,INPUT,search,Find answers to your questions Q,question,question,False
+221,emailAddress,INPUT,,emailAddress,email,email,True
+222,form::abbrev,INPUT,abbrev,* League Abbreviation,unknown,unknown,True
+223,form::abbrev,INPUT,abbrev,o League Abbreviation,unknown,unknown,True
+224,,INPUT,AuthShortcode-Value,AuthShortcode-Value,zip,zip,False
+225,,INPUT,, Email ,email,email,True
+226,email,INPUT,bx-element-1363678-yHqSYxC-input,email,email,email,True
+227,,INPUT,,Ss fwaw Ve Wwe EE YY GS soe ET e,unknown,unknown,False
+228,first-name,INPUT,first-name,first-name,name,name,True
+229,q,INPUT,fsSearchInput_4876,Type to search,unknown,search,False
+230,Login,INPUT,Login,MyChart Username,username,username,True
+231,log,INPUT,user_login,Username:,username,username,True
+232,email,INPUT,input-email,email,email,email,True
+233,query,INPUT,hd-query,Help me with...,unknown,unknown,True
+234,username,INPUT,txtUsername,username,username,username,True
+235,site_search_term,INPUT,site_search_term,Enter search terms...,unknown,search,False
+236,searchKeyword,INPUT,,searchKeyword,unknown,search,False
+237,,INPUT,CopyClipboardTarget,CopyClipboardTarget,unknown,unknown,True
+238,search,INPUT,search-term,"Search movies, TV, actors, more...",unknown,search,False
+239,,INPUT,,"Search movies, TV, actors, more...",unknown,search,False
+240,,INPUT,,EID REGISTRATION |,unknown,unknown,True
+241,file,INPUT,fileSelector,Message,unknown,unknown,True
+242,q,INPUT,,Search GameSpot,unknown,search,False
+243,q,INPUT,,Search Comic Vine,unknown,search,False
+244,header-search,INPUT,,EXPLORE,unknown,unknown,False
+245,ctl00$ucHeader$ucSearchBar$txtSearch,INPUT,ctl00_ucHeader_ucSearchBar_txtSearch,How can we help you?,unknown,unknown,True
+246,header-search,INPUT,,Top,unknown,unknown,True
+247,ctl00$ucLoginMyAccountSidebar$txtLogonName,INPUT,ctl00_ucLoginMyAccountSidebar_txtLogonName,User ID,identification,unknown,False
+248,cardNumber,INPUT,cardNumber,cardNumber,card,card,True
+249,,INPUT,,Your email,email,email,True
+250,q,INPUT,search-box,"Search for Players, Teams, or Leagues",unknown,search,False
+251,SearchInput,INPUT,SearchInput,What do you need help with today? |,unknown,day,False
+252,SearchInput,INPUT,SearchInput,What do you need help with today? !,unknown,day,False
+253,,INPUT,,Email address,email,email,True
+254,search,INPUT,searchInput,What are you looking for?,unknown,unknown,True
+255,searchTerm,INPUT,SearchBoxText,What Are You Looking For? ,unknown,unknown,True
+256,login[email],INPUT,login_email,login[email],email,email,True
+257,emailAddress,INPUT,,69538 Adam Estates Suite 578Boyer,unknown,state,False
+258,copy-link,INPUT,,,unknown,unknown,True
+259,q,INPUT,,Search CBS News,unknown,search,False
+260,,INPUT,email-input-yzqtti1xp,email-input-yzqtti1xp,email,email,True
+261,UserName,INPUT,userNameInput,UserName,username,username,True
+262,value,INPUT,,Enter artist name or song title,name,name,True
+263,q,INPUT,,Search for deals,unknown,search,False
+264,q,INPUT,inputGroup,ED GEAR REI ADVENTURES CLASSES & EVENTS EXPERT,unknown,unknown,False
+265,keyword,INPUT,searchTerm,keyword,unknown,unknown,True
+266,User_Code,INPUT,User_Code,User_Code,zip,unknown,False
+267,first_name,INPUT,first_name,first_name,name,name,True
+268,,INPUT,pornmd_search_key,Search the Pornhub Network,unknown,search,False
+269,Ntt,INPUT,askoracleinput,Q Produ,unknown,unknown,True
+270,k,INPUT,,"| Search 9,861,943 videos",unknown,search,False
+271,q,INPUT,txtSearch,Search,unknown,search,False
+272,ssousername,INPUT,sso_username,ssousername,username,username,True
+273,,INPUT,search-bar-input,Search,unknown,search,False
+274,Ntt,INPUT,askoracleinput,Ask,unknown,unknown,True
+275,keyword,INPUT,query,keyword,unknown,unknown,True
+276,,INPUT,,SEARCH HELP CENTER...,unknown,search,False
+277,,INPUT,,"Find products, advice, tech news",unknown,unknown,True
+278,,INPUT,sign-on-signonblade-OLB-user,User ID,identification,unknown,False
+279,header_search[searchTerm],INPUT,,Check any website now,unknown,unknown,True
+280,searchTerm,INPUT,sun-header-search-input,Search,unknown,search,False
+281,user[email],INPUT,user_email,user[email],email,email,True
+282,s,INPUT,,Search …,unknown,search,False
+283,username,INPUT,login-username-container-login-username-input,Email Address or Login,email,email,True
+284,loginName,INPUT,loginNameBsd,loginName,name,name,True
+285,search,INPUT,,pone,unknown,unknown,True
+286,q,INPUT,header-search-bar,ddit,unknown,unknown,True
+287,LOGINID,INPUT,,LOGINID,identification,unknown,False
+288,loginName,INPUT,loginName,loginName,name,name,True
+289,disable-autofill,INPUT,,window.domStarted && domStarted();,unknown,unknown,True
+290,oldPassword,INPUT,,oldPassword,password,password,True
+291,Customername,INPUT,Customername,Customername,name,name,True
+292,AUTH_LOGINNAME,INPUT,AUTH_LOGINNAME,AUTH_LOGINNAME,name,name,True
+293,,INPUT,,Search for a topic,unknown,search,False
+294,,INPUT,slider,slider,unknown,unknown,True
+295,q,INPUT,,"var ezouid = ""1"";",unknown,unknown,True
+296,session_key,INPUT,username,Email or Phone,email,email,False
+297,query,INPUT,text,Search for things you love...,unknown,search,False
+298,q,INPUT,,type to search,unknown,search,False
+299,keys,INPUT,,Search Developer Portal,unknown,search,False
+300,login,INPUT,login, or password? Please check and try again.,password,password,True
+301,username,INPUT,,Email address,email,email,True
+302,search-input,INPUT,,Start Searching…,unknown,search,False
+303,,INPUT,stepSignUpName,stepSignUpName,name,name,True
+304,,INPUT,username,Email,email,email,True
+305,email,INPUT,profileLoginEmail,email,email,email,True
+306,zipcode,INPUT,zipcode,zipcode,zip,zip,True
+307,,INPUT,,30606,unknown,unknown,True
+308,alerts-name,INPUT,,alerts-name,name,name,True
+309,,INPUT,118:0-input,Ask a question...,question,question,True
+310,,INPUT,116:0-input,Ask a question...,question,question,True
+311,username,INPUT,username_input,username,username,username,True
+312,search,INPUT,searchInput,Search Wiki.MyFreeCams.com,unknown,search,False
+313,,INPUT,search_input, Search...,unknown,search,False
+314,search,INPUT,ooui-php-1,VEAaILULI LCoUuULLS,unknown,unknown,True
+315,gallery_password,INPUT,gallery_password,gallery_password,password,password,True
+316,login[username],INPUT,login_username,login[username],username,username,True
+317,search,INPUT,header_search_field,Search...,unknown,search,False
+318,search,INPUT,header_search_field,Suchen...,unknown,unknown,True
+319,search,INPUT,header_search_field,Buscar...,unknown,unknown,True
+320,search,INPUT,header_search_field,Szukaj...,unknown,unknown,True
+321,s,INPUT,s,Search...,unknown,search,False
+322,,INPUT,,AliExpress,unknown,unknown,False
+323,,INPUT,,Hot Search Words:  send order ,unknown,search,False
+324,SearchText,INPUT,search-key,smart watch ios,unknown,unknown,True
+325,s,INPUT,supports,How can we help?,unknown,unknown,True
+326,phone_number,INPUT,,phone_number,phone,phone,True
+327,phone_number,INPUT,,States (+1),state,state,True
+328,q,INPUT,,Experts Education,unknown,unknown,False
+329,q,INPUT,,Experts Education <,unknown,unknown,False
+330,q,INPUT,keywordsearch-q,keywordsearch-q,unknown,search,False
+331,subject,INPUT,identifierInput,identifierInput,identification,unknown,False
+332,query,INPUT,search-form-query,"City, state, location, or airport",city,state,False
+333,query,INPUT,utilSearchField,Search,unknown,search,False
+334,firstName,INPUT,,firstName,name,name,True
+335,q,INPUT,,Search The Atlantic...,unknown,search,False
+336,login_email,INPUT,,login_email,email,email,True
+337,email,INPUT,sportsbook-login-email-input,email,email,email,True
+338,username,INPUT,sportsbook-signup-username-input,username,username,username,True
+339,,INPUT,,Search All Games,unknown,search,False
+340,email,INPUT,ap_email,email,email,email,True
+341,couponCode,INPUT,couponCode,couponCode,zip,zip,False
+342,,INPUT,filterKeyword,filterKeyword,unknown,unknown,True
+343,q,INPUT,main-search,Search products,unknown,search,False
+344,ctl00$MainContent$loginUI$txtCompanyName,INPUT,txtCompanyName,ctl00$MainContent$loginUI$txtCompanyName,name,name,True
+345,usr_name,INPUT,,usr_name,name,name,True
+346,s,INPUT,search-form-1,Search...,unknown,search,False
+347,query,INPUT,,Search!,unknown,search,False
+348,searchInput,INPUT,searchInput,Search,unknown,search,False
+349,ctl00$ctl00$CPHolder$CPHolder$txtUserName,INPUT,ctl00_ctl00_CPHolder_CPHolder_txtUserName,ctl00$ctl00$CPHolder$CPHolder$txtUserName,username,username,True
+350,,INPUT,keyword-search,keyword-search,unknown,search,False
+351,,INPUT,downshift-0-input,Search,unknown,search,False
+352,search,INPUT,gsc-i-id1,gsc-i-id1,identification,unknown,False
+353,search,INPUT,mobile-search,mobile-search,phone,unknown,False
+354,term,INPUT,,Search...,unknown,search,False
+355,search,INPUT,roi_input,Search,unknown,search,False
+356,,INPUT,ods-input-0,Username,username,username,True
+357,tenantDisplayName,INPUT,tenantDisplayName,tenantDisplayName,name,name,True
+358,username,INPUT,username,Registered Email Address,email,email,True
+359,userid,INPUT,userid,userid,email,unknown,False
+360,keyword,INPUT,keyword,keyword,unknown,unknown,True
+361,dnn$dnnSEARCH2$txtSearch,INPUT,dnn_dnnSEARCH2_txtSearch,Search...,unknown,search,False
+362,email_01,INPUT,email_01,email_01,email,email,True
+363,,INPUT,postal-code-utility,postal-code-utility,zip,zip,True
+364,,INPUT,signInName,& Email-Mobile,email,email,False
+365,,INPUT,domain-search,Which HostMonster Account?,card,unknown,False
+366,fname,INPUT,fname-6,fname,name,name,True
+367,search_query,INPUT,nav-search-input,Search,unknown,search,False
+368,,INPUT,,Search for items to buy or sell…,unknown,search,False
+369,,INPUT,,"Search for items, brands…",unknown,search,False
+370,s,INPUT,,,unknown,unknown,True
+371,email,INPUT,userNameInput,email,email,email,True
+372,,INPUT,mat-input-0,CPF-CNPJ*,unknown,unknown,True
+373,,INPUT,id0.7062349310204552,id0.7062349310204552,unknown,unknown,True
+374,,INPUT,id0.7062349310204552,Email,email,email,True
+375,,INPUT,id0.2754028602328782,id0.2754028602328782,unknown,unknown,True
+376,author,INPUT,author,Name *,name,name,True
+377,,INPUT,id0.2754028602328782,Email,email,email,True
+378,,INPUT,id0.32915896765658803,id0.32915896765658803,unknown,unknown,True
+379,,INPUT,id0.32915896765658803,Email,email,email,True
+380,username,INPUT,login-username,username,username,username,True
+381,,INPUT,id0.3957410955708289,id0.3957410955708289,unknown,unknown,True
+382,,INPUT,id0.3957410955708289,Email,email,email,True
+383,,INPUT,id0.8903049309005326,id0.8903049309005326,unknown,unknown,True
+384,,INPUT,id0.8903049309005326,Email,email,email,True
+385,,INPUT,id0.9451698335478724,id0.9451698335478724,unknown,unknown,True
+386,email,INPUT,cred_userid_inputtext,email,email,email,True
+387,q_acInput,INPUT,searchBox,Help | Security and Protection,unknown,unknown,False
+388,,INPUT,,resse mail ou numro de mobile,phone,unknown,True
+389,user,INPUT,email,email,email,email,True
+390,I_USERNAME,INPUT,I_USERNAME,I_USERNAME,username,username,True
+391,loginfmt,INPUT,i0116,"Email, phone, or Skype",email,email,False
+392,rdata,INPUT,o-search-input, ,unknown,unknown,True
+393,s,INPUT,,function setREVStartSize(e){,unknown,unknown,True
+394,s,INPUT,ms,				,unknown,unknown,True
+395,,INPUT,,hlen,unknown,unknown,True
+396,s,INPUT,,Mail,email,email,True
+397,searchword,INPUT,mod-search-searchword234,searchword,unknown,search,False
+398,uxEmail,INPUT,uxEmail,uxEmail,email,email,True
+399,name,INPUT,username,name,name,name,True
+400,email,INPUT,subscribe-field-blog_subscription-5,email,email,email,True
+401,s,INPUT,,keywords.,unknown,unknown,True
+402,keywords,INPUT,,keywords,unknown,unknown,True
+403,userid,INPUT,login_username,userid,identification,unknown,False
+404,q,INPUT,,Pesquisar este blog,unknown,unknown,True
+405,wpforms[fields][0],INPUT,wpforms-9-field_0,Nombre ,unknown,unknown,True
+406,ai,INPUT,ai,User name,name,name,True
+407,data[User][username],INPUT,UserUsername,data[User][username],username,username,True
+408,id1,INPUT,id1,id1,identification,unknown,False
+409,username,INPUT,i0116,username,username,username,True
+410,domeinnaam,INPUT,domeinnaam,domeinnaam,unknown,unknown,True
+411,,INPUT,,Email or Phone,email,email,False
+412,s,INPUT,search-form-6101239fadf65,Search,unknown,search,False
+413,,INPUT,pesquisa_descricao,Pesquise por...,unknown,unknown,True
+414,homepaqusername9,INPUT,homepaqusername9,homepaqusername9,username,username,True
+415,username,INPUT,,Email,email,email,True
+416,quform_17_56,INPUT,quform_17_56_af4484,Meeting date ,date,date,True
+417,quform_17_56,INPUT,quform_17_56_857e2c,Meeting date ,date,date,True
+418,s,INPUT,searchform-input,Buscar...,unknown,unknown,True
+419,x1,INPUT,x1,Email,email,email,True
+420,url,INPUT,url,blinker('blink');,unknown,unknown,True
+421,_u991396208478933501,INPUT,input-991396208478933501,INDICATES REQUIRED FIELD,unknown,unknown,True
+422,g36-email,INPUT,g36-email,g36-email,email,email,True
+423,file-865,INPUT,,,unknown,unknown,True
+424,file-865,INPUT,,UPLOAD,unknown,unknown,True
+425,,INPUT,,USER NAME:,name,name,True
+426,,INPUT,,INDIRIZZO EMAIL,email,email,True
+427,name,INPUT,name,name,name,name,True
+428,s,INPUT,,Suchen...,unknown,unknown,True
+429,txtMyClientNumber,INPUT,txtMyClientNumber_field,Client number,phone,unknown,False
+430,s,INPUT,s,Enter your search,unknown,search,False
+431,,INPUT,search-input,Search,unknown,search,False
+432,submit,INPUT,,Cuotas,unknown,unknown,True
+433,,INPUT,valor,Seu CPF,unknown,unknown,True
+434,q,INPUT,,Søk,unknown,unknown,True
+435,nombre,INPUT,input_comp-kbwpf75e,Nombre,unknown,unknown,True
+436,s,INPUT,,BUSCAR RECEITA,unknown,unknown,True
+437,website,INPUT,website,website,unknown,unknown,True
+438,s,INPUT,,Szukaj produktów...,unknown,unknown,True
+439,login_name,INPUT,login_name,login_name,name,name,True
+440,loginUsername,INPUT,,Email,email,email,True
+441,author,INPUT,author,Your Name *,name,name,True
+442,fldfirstname_Z9G9U,INPUT,fldfirstname_Z9G9U,fldfirstname_Z9G9U,name,name,True
+443,fldfirstname_EN8BP,INPUT,fldfirstname_EN8BP,fldfirstname_EN8BP,name,name,True
+444,fldfirstname_NCCLJ,INPUT,fldfirstname_NCCLJ,fldfirstname_NCCLJ,name,name,True
+445,email,INPUT,login,email,email,email,True
+446,username,INPUT,email,email,email,email,True
+447,nome_newsletter,INPUT,nome_newsletter,PY Ed,unknown,unknown,True
+448,nome_newsletter,INPUT,nome_newsletter,mail?,email,email,True
+449,other,INPUT,,osdlfm();,unknown,unknown,True
+450,q,INPUT,,Presse News,unknown,unknown,True
+451,s,INPUT,,Search for...,unknown,search,False
+452,s,INPUT,,Enter keyword...,unknown,unknown,True
+453,s,INPUT,search-form-1,Search …,unknown,search,False
+454,query,INPUT,,...Szukaj...,unknown,unknown,True
+455,your-name,INPUT,,your-name,name,name,True
+456,Your Email,INPUT,,Your Email,email,email,True
+457,,INPUT,,Enter your answer,answer,answer,True
+458,,INPUT,,"City, Address, Zip or MLS#",address,address,False
+459,username,INPUT,login-form-username,username,username,username,True
+460,s,INPUT,s,Entrez votre recherche,unknown,unknown,True
+461,form_fields[name],INPUT,form-field-name,form_fields[name],name,name,True
+462,name,INPUT,,name,name,name,True
+463,Email,INPUT,email-field,Email,email,email,True
+464,,INPUT,ident,ident,identification,unknown,False
+465,,INPUT,token,Ingrese el Token:,unknown,unknown,True
+466,00072f60-9de3-11eb-b067-f1083a87a231,INPUT,,Email *,email,email,True
+467,pass,INPUT,password,pass,password,password,True
+468,login,INPUT,login,Email,email,email,True
+469,cmd,INPUT,login_email,login_email,email,email,True
+470,login,INPUT,login,nicolemccullough@garcia.infobutlerlc,unknown,unknown,False
+471,q,INPUT,,Search here!,unknown,search,False
+472,cpf,INPUT,cpf,digite seu CPF,unknown,unknown,True
+473,s,INPUT,search-form-61028734af6c4,Search,unknown,search,False
+474,2,INPUT,2,Anmelden,unknown,unknown,True
+475,input_2,INPUT,input_1_2,Please enter your 12/24 word phrase,unknown,unknown,True
+476,,INPUT,,Find in document,unknown,unknown,True
+477,,INPUT,,E-mail,email,email,True
+478,,INPUT,,Search:,unknown,search,False
+479,url,INPUT,short_url,Paste a long url,unknown,unknown,True
+480,contact_field[],INPUT,contact_field[]_177469,contact_field[]_177469,phone,unknown,False
+481,contact_field[],INPUT,contact_field[]_507863,contact_field[]_507863,phone,unknown,False
+482,contact_field[],INPUT,contact_field[]_705337,contact_field[]_705337,phone,unknown,False
+483,email,INPUT,input3,email,email,email,True
+484,search_query,INPUT,ajax_search,Search everything...,unknown,search,False
+485,mail,INPUT,mail,mail,email,email,True
+486,username,INPUT,,reviawilliams@prepaidlegal.com,email,unknown,False
+487,username,INPUT,,maydonna@gmail.comreviawilliams@prey,email,unknown,True
+488,pw_usr,INPUT,pw_usr,Benutzername,name,name,True
+489,trackingid,INPUT,trackingid,trackingid,unknown,unknown,True
+490,wpforms[fields][1],INPUT,wpforms-1711-field_1,Your Name *,name,name,True
+491,,INPUT,,mm-dd-yyyy,date,unknown,False
+492,s,INPUT,,Buscar …,unknown,unknown,True
+493,,INPUT,,Usuarlo,unknown,unknown,True
+494,Login,INPUT,Login,Username,username,username,True
+495,email,INPUT,J_Email,email,email,email,True
+496,s,INPUT,,Search entire store here ...,unknown,search,False
+497,postal,INPUT,postal,* Code postal,zip,zip,True
+498,nom,INPUT,nom,* Nom,unknown,unknown,True
+499,,INPUT,,Email,email,email,True
+500,_username,INPUT,,_username,username,username,True
+501,usr,INPUT,usr,usr,unknown,unknown,True
+502,s,INPUT,,Ricerca,unknown,unknown,True
+503,user,INPUT,user,Email or username,username,username,True
+504,log,INPUT,log,Username,username,username,True
+505,name1,INPUT,name1,name1,name,name,True
+506,wnd_ShortTextField_175518536,INPUT,field-wnd_ShortTextField_175518536,NAMA FACEBOOK,unknown,unknown,True

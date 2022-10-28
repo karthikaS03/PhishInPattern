@@ -168,8 +168,10 @@ def add_phish_tank_link(phish_tank_link_obj):
 def add_open_phish_link(open_phish_links_obj):
   try:
     session = create_db_session()
-    link = session.query(Open_Phish_Links).filter(text('open_phish_url="'+str(open_phish_links_obj.open_phish_url)+'"')).first()
-    if link == None:      
+    link =session.query(Open_Phish_Links).filter(text('open_phish_url='+str(open_phish_links_obj.open_phish_url))).first()
+    if link !=None:
+      session.merge(open_phish_links_obj)
+    else:
       session.add(open_phish_links_obj)
     session.commit()
     session.close()
@@ -281,24 +283,6 @@ def fetch_field_training_set():
   except Exception as e:
     logger.info('Exception occured in fetch_field_training_set: '+str(e))
 
-def fetch_multi_phishing_data():
-  try:
-    conn = db.connect()
-    query = text('SELECT * FROM multi_stage_phishing')
-    result = conn.execute(query)
-    return result.fetchall()
-  except Exception as e:
-    print(e)
-
-def fetch_nonmulti_phishing_data():
-  try:
-    conn = db.connect()
-    query = text('SELECT * FROM single_stage_phishing')
-    result = conn.execute(query)
-    return result.fetchall()
-  except Exception as e:
-    print(e)
-
 def fetch_requested_resources():
   try:
     conn = db.connect()
@@ -346,8 +330,8 @@ def fetch_openphish_urls(count=100):
   try:
     session = create_db_session()
     phish_urls = []
-    for s in session.query(Open_Phish_Links).filter(Open_Phish_Links.is_analyzed==None).limit(count).all():
-      a = Open_Phish_Links(open_phish_link_id = s.open_phish_link_id, open_phish_url = s.open_phish_url, open_phish_screenshot = s.open_phish_screenshot, open_phish_phishkit = s.open_phish_phishkit)
+    for s in session.query(Open_Phish_Links).filter(and_(Open_Phish_Links.is_analyzed==None,Open_Phish_Links.status=='Online')).limit(count).all():
+      a = Open_Phish_Links(open_phish_link_id = s.open_phish_link_id, open_phish_url = s.open_phish_url)
       # print(a)
       phish_urls.append(a)
     session.commit()

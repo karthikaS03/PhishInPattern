@@ -8,7 +8,7 @@ import os
 import json 
 import sys
 import csv 
-sys.path.append('/home/karthika/Desktop/PhishMesh/PhishMeshCrawler/')
+sys.path.append('/home/sk-lab/Desktop/PhishProDetector/PhishMeshCrawler/')
 from database import phish_db_layer, phish_db_schema
 from docker_config import *
 from docker_monitor import *
@@ -57,11 +57,11 @@ def process_urls_parallel(analysis_urls, script_file, cont_timeout, max_cont):
 				url = itm['url']
 				# print(url)
 				visit_count = itm['count']
-				if i!=0 and i%5==0:
-					time.sleep(30)
+				if i!=0 and i%3==0:
+					time.sleep(120)
 				if visit_count==0:
 					## initiates docker container for the first time
-					futures[executor.submit(initiate_container, url, str(id), script_file, visit_count, cont_timeout, itm)] = (str(id),visit_count, url, itm)		
+					futures[executor.submit(initiate_container, url, str(id), script_file, visit_count, cont_timeout)] = (str(id),visit_count, url)		
 				else:
 					## Resumes docker container and waits for notifications
 					futures[executor.submit(resume_container,url, str(id), script_file, visit_count, cont_timeout)] = (str(id), visit_count, url)	
@@ -71,7 +71,7 @@ def process_urls_parallel(analysis_urls, script_file, cont_timeout, max_cont):
 				print('waiting for containers to complete execution')
 				# print(futures)
 				for future in  concurrent.futures.as_completed(futures, timeout=cont_timeout):
-					id, v_count, url, url_itm = futures.pop(future)				
+					id, v_count, url = futures.pop(future)				
 					try:
 						get_logger('container_'+id).info(get_time() + 'Container_'+ str(id) +': Completed successfully!!'	)	
 					except concurrent.futures.TimeoutError as ex:
@@ -88,7 +88,7 @@ def process_urls_parallel(analysis_urls, script_file, cont_timeout, max_cont):
 				##  Stop the containers that didn't complete before timeout and export data
 				fts = list(futures.keys())
 				for future in fts:
-					id, v_count, url, url_itm = futures.pop(future)				
+					id, v_count, url = futures.pop(future)				
 					try:				
 						get_logger('container_'+id).info(get_time() + 'Container_'+ str(id) +': Timeout Occured!!'	)	
 					except concurrent.futures.TimeoutError as ex:
@@ -97,7 +97,7 @@ def process_urls_parallel(analysis_urls, script_file, cont_timeout, max_cont):
 						get_logger('container_'+id).info(get_time() +  'Container_' + str(id) +': Exception ')
 						get_logger('container_'+id).info(exc)			
 							
-					export_container_logs(id, v_count, url_itm)	
+					export_container_logs(id, v_count)	
 					
 					stop_container(id)
 								
@@ -118,11 +118,8 @@ def fetch_urls_from_db(count=0):
 		crawl_urls={}
 		for item in phishtank_dets:
 			# print(isinstance(item , phish_db_schema.Open_Phish_Links))
-			# if isinstance(item , phish_db_schema.Open_Phish_Links):
-			id = id_prefix + 'openphish_'+ str(item.open_phish_link_id)
-			crawl_urls[str(id)] = {'url': item.open_phish_url, 'count':0, 'screenshot': item.open_phish_screenshot, 'phishkit': item.open_phish_phishkit }
-			# id = id_prefix + (str(item.phish_tank_ref_id) if not isinstance(item , phish_db_schema.Open_Phish_Links)  else 'openphish_'+ str(item.open_phish_link_id))
-			# crawl_urls[str(id)] = {'url' : item.phish_tank_url if not isinstance(item , phish_db_schema.Open_Phish_Links) else item.open_phish_url, 'count':0, 'screenshot': }			
+			id = id_prefix + (str(item.phish_tank_ref_id) if not isinstance(item , phish_db_schema.Open_Phish_Links)  else 'openphish_'+ str(item.open_phish_link_id))
+			crawl_urls[str(id)] = {'url' : item.phish_tank_url if not isinstance(item , phish_db_schema.Open_Phish_Links) else item.open_phish_url, 'count':0}			
 			item.is_analyzed = True
 			phish_db_layer.update_analysis_url(item)
 		return crawl_urls
@@ -130,7 +127,7 @@ def fetch_urls_from_db(count=0):
 
 
 def fetch_from_file():
-	urls_path =  '../data/phishing_dumps/csv/phishing_seen_recently_{}.csv'.format((datetime.datetime.today()-timedelta(1)).strftime('%d%m%Y'))
+	urls_path =  '../data/phishing_dumps/csv/tmp_examples_phishing_{}.csv'.format((datetime.datetime.today()-timedelta(1)).strftime('%d%m%Y'))
 	# urls_path = '../data/phishing_dumps/csv/tmp_examples_phishing.csv'phishing_seen_recently_
 
 	# crawl_urls = {'test123': {'url':'https://www.google.com/recaptcha/api2/demo', 'count':0}}
@@ -172,17 +169,17 @@ def fetch_from_file():
 
 def process_phishing_urls():	
 	while True:
-		phish_urls  =   fetch_urls_from_db(max_containers) #fetch_urls_from_db(max_containers) #fetch_from_file() #
+		phish_urls  =   fetch_from_file() #fetch_urls_from_db(max_containers) #fetch_from_file() #
 		print(len(phish_urls))
 		processed_ids = process_urls_parallel(phish_urls, collection_script, container_timeout, max_containers)		
 		if len(client.containers.list())>30:
 			print('docker pruning started!!')
 			docker_prune()
-		# break
+		break
 
 		
 def main():
-	stop_running_containers()
+	# stop_running_containers()
 	'''
 	prune unused removed containers
 	'''

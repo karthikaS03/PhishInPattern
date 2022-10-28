@@ -9,5 +9,7 @@ PhishMeshCrawler/phishtank_online_urls.json
 PhishMeshCrawler/phishtankdetails
 PhishMeshCrawler/config
 PhishMeshCrawler/database/phish_db_config.py
-
-
+docker_phishmesh_puppeteer/keys/
+ampere_instructions.txt
+PhishMeshAnalyzer/captcha_processing
+PhishMeshAnalyzer/gsb_v4.db

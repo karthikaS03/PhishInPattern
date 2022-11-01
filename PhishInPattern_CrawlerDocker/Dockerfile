@@ -285,20 +285,12 @@ RUN sudo chmod +x /opt/bin/start-fluxbox.sh
 RUN sudo chmod +x /opt/bin/start-vnc.sh
 
 
-COPY keys/github_key_phishmesh .
-#ADD PhishMeshCrawler /home/pptruser/app
 
-
-RUN chown -R pptruser:pptruser github_key_phishmesh
-
-RUN eval "$(ssh-agent -s)" \
-    && ssh-add github_key_phishmesh \
-    && ssh-keyscan -H github.com >> /etc/ssh/ssh_known_hosts \
-    && cd /home/pptruser/app && pwd \
+RUN cd /home/pptruser/app && pwd \
     && git init \ 
-    && git remote add -f origin git@github.com:karthikaS03/PhishMesh.git \
+    && git remote add -f origin https://karthikaS03/PhishInPattern.git \
     && git config core.sparsecheckout true \
-    && echo 'PhishMeshCrawler' >> .git/info/sparse-checkout \
+    && echo 'PhishInPattern_Crawler' >> .git/info/sparse-checkout \
     && git pull origin master
 
 
@@ -328,4 +320,4 @@ EXPOSE 5900
 
 USER pptruser
 
-WORKDIR /home/pptruser/app/PhishMeshCrawler
+WORKDIR /home/pptruser/app/PhishInPattern_Crawler

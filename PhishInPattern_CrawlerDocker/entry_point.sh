@@ -11,12 +11,12 @@ if ! whoami &> /dev/null; then
   fi
 fi
 
-/usr/bin/supervisord --configuration /etc/supervisord.conf &
+/usr/bin/supervisord --configuration /etc/supzervisord.conf &
 
 SUPERVISOR_PID=$!
 
-eval $(ssh-agent)
-ssh-add /github_key_phishmesh
+#eval $(ssh-agent)
+#ssh-add /github_key_phishmesh
 cd /home/pptruser/app
 git pull origin master
 

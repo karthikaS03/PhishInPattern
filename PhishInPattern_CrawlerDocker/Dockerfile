@@ -2,7 +2,7 @@
 # NOTE: DO *NOT* EDIT THIS FILE.  IT IS GENERATED.
 # PLEASE UPDATE Dockerfile.txt INSTEAD OF THIS FILE
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-FROM ubuntu:bionic-20181204
+FROM ubuntu:bionic
 
 LABEL authors="karthika <karthikaa08@gmail.com>"
 
@@ -66,9 +66,9 @@ ENV LANG="C.UTF-8"
 #========================================
 # Install Python3  and pip
 #========================================
-RUN apt-get install -y python3 && apt install -y python3-pip
+RUN apt-get install -y python && apt install -y python-pip
 
-RUN apt-get update && apt-get install -y python3-tk python3-dev
+RUN apt-get update && apt-get install -y python-tk python-dev
 
 #========================================
 # Add normal user with passwordless sudo
@@ -288,7 +288,7 @@ RUN sudo chmod +x /opt/bin/start-vnc.sh
 
 RUN cd /home/pptruser/app && pwd \
     && git init \ 
-    && git remote add -f origin https://karthikaS03/PhishInPattern.git \
+    && git remote add -f origin https://github.com/karthikaS03/PhishInPattern.git \
     && git config core.sparsecheckout true \
     && echo 'PhishInPattern_Crawler' >> .git/info/sparse-checkout \
     && git pull origin master

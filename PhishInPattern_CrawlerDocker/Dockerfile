@@ -66,9 +66,9 @@ ENV LANG="C.UTF-8"
 #========================================
 # Install Python3  and pip
 #========================================
-RUN apt-get install -y python && apt install -y python-pip
+RUN apt-get install -y python3.8 && apt install -y python3.8-distutils && apt install -y python3-pip && python3.8 -m pip install --upgrade pip
 
-RUN apt-get update && apt-get install -y python-tk python-dev
+RUN apt-get update && apt-get install -y python3.8-tk python3.8-dev
 
 #========================================
 # Add normal user with passwordless sudo
@@ -288,6 +288,7 @@ RUN sudo chmod +x /opt/bin/start-vnc.sh
 
 RUN cd /home/pptruser/app && pwd \
     && git init \ 
+    && git config --global --add safe.directory /home/pptruser/app
     && git remote add -f origin https://github.com/karthikaS03/PhishInPattern.git \
     && git config core.sparsecheckout true \
     && echo 'PhishInPattern_Crawler' >> .git/info/sparse-checkout \

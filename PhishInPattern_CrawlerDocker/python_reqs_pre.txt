@@ -1,1 +1,4 @@
 Pillow
+numpy==1.21.2
+cython
+werkzeug==2.2.2

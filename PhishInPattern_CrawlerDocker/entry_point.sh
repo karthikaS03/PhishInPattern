@@ -11,7 +11,7 @@ if ! whoami &> /dev/null; then
   fi
 fi
 
-/usr/bin/supervisord --configuration /etc/supzervisord.conf &
+/usr/bin/supervisord --configuration /etc/supervisord.conf &
 
 SUPERVISOR_PID=$!
 
